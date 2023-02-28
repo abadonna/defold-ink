@@ -1,0 +1,27 @@
+local ink = require "ink.story" 
+
+local function show(paragraphs, answers)
+	for _, p in ipairs (paragraphs) do
+		pprint(p.text)
+	end
+
+	if #answers > 0 then
+		pprint("----------------------")
+		for i, a in ipairs (answers) do
+			pprint("[" .. i .. "] " .. a)
+		end
+	end
+end
+
+function init(self)
+	local res = sys.load_resource("/assets/Untitled.json")
+	local story = ink.create(res)
+
+	local paragraphs, answers = story.continue()
+	show(paragraphs, answers)
+
+	while #answers > 0 do
+		paragraphs, answers = story.continue(1)
+		show(paragraphs, answers)
+	end
+end
