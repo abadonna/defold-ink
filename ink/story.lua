@@ -4,8 +4,9 @@ local Process = require "ink.process"
 local M = {}
 
 M.create = function(s)
+	local variables = {__globals = {}, __root = {}}
 	local data = json.decode(s)
-	local story = {variables = {}}
+	local story = {variables = variables["__globals"]}
 
 	local root = Container.create(data.root)
 	local choices = {}
@@ -27,7 +28,7 @@ M.create = function(s)
 			choices = choices
 		}
 
-		Process.run(data, output, story.variables)
+		Process.run(data, output, variables)
 
 		local answers = {}
 		for _, choice in ipairs(choices) do

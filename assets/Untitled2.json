@@ -1,0 +1,54 @@
+{
+    "inkVersion": 20,
+    "root": [
+        ["^Once upon a time...", "\n", "ev", 1, "/ev", {
+                "temp=": "x"
+            }, {
+                "->": "www"
+            },
+            ["done", {
+                "#f": 5,
+                "#n": "g-0"
+            }], null
+        ], "done", {
+            "www": [{
+                "->": ".^.w1"
+            }, {
+                "w1": ["ev", 1, "/ev", {
+                    "temp=": "y"
+                }, "^w1: ", "ev", {
+                    "VAR?": "y"
+                }, "out", "/ev", "\n", "ev", {
+                    "VAR?": "x"
+                }, 2, "<", "/ev", [{
+                    "->": ".^.b",
+                    "c": true
+                }, {
+                    "b": ["^ ", {
+                        "->": "www.w2"
+                    }, {
+                        "->": "www.w1.16"
+                    }, null]
+                }], "nop", "\n", "^FINISh!", "\n", "done", {
+                    "#f": 1
+                }],
+                "w2": ["ev", 2, "/ev", {
+                    "temp=": "y"
+                }, "ev", 2, "/ev", {
+                    "VAR=": "x",
+                    "re": true
+                }, "^w2: ", "ev", {
+                    "VAR?": "y"
+                }, "out", "/ev", "\n", {
+                    "->": "www.w1"
+                }, "end", {
+                    "#f": 1
+                }],
+                "#f": 1
+            }],
+            "global decl": ["ev", "/ev", "end", null],
+            "#f": 1
+        }
+    ],
+    "listDefs": {}
+}

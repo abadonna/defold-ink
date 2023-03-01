@@ -1,5 +1,16 @@
 local M = {}
 
+local function get_variable(variables, container, name)
+	local value = variables["__globals"][name] 
+	if value then return value end
+
+	value = variables[container.stitch][name]
+	if value then return value end
+
+	value = variables["__root"][name]
+	return value
+end
+
 local function pop(stack)
 	assert(#stack > 0, "empty stack!")
 	local item = stack[#stack]
@@ -82,11 +93,11 @@ M.run = function(container, output, variables)
 			elseif item == "ev" then --  start evaluation mode, objects are added to an evaluation stack
 				--
 			elseif item == "/ev" then 
-				--assert(#stack == 0, "stack is not empty")
+				--
 			elseif item == "str" then 
-				--todo
+				--
 			elseif item == "/str" then 
-				--todo
+				--
 			elseif item == "out" then 
 				table.insert(output.text, pop(stack))
 			elseif item == "+" then
@@ -122,7 +133,7 @@ M.run = function(container, output, variables)
 			elseif item == "nop" then
 				--No-operation
 			elseif item == "void" then
-				--No-operation
+				--
 			elseif item == "->->" then
 				break
 			else
@@ -148,19 +159,30 @@ M.run = function(container, output, variables)
 
 			elseif item["#"] then --tag
 				table.insert(output.tags, item["#"])
+
 			elseif item["->"] then --divert
-				if (item["c"] == nil) or (item["c"] and pop(stack)) then
-					local path = item["var"] and variables[item["->"]] or item["->"]
+				if (item["c"] == nil) or (item["c"] and pop(stack)) then --checking condition
+					local path = item["var"] and get_variable(variables, container, item["->"]) or item["->"]
 					container = M.find(path, container)
 				end
+
 			elseif item["^->"] then --variable divert target -- only in stack?
 				table.insert(stack, item["^->"])
+
 			elseif item["VAR?"] then --variable
-				table.insert(stack, variables[item["VAR?"]])
+				table.insert(stack, get_variable(variables, container, item["VAR?"]))
+
 			elseif item["VAR="] then --variable assignment
-				variables[item["VAR="]] = pop(stack)
-			elseif item["temp="] then --variable assignment //todo: temporary
-				variables[item["temp="]] = pop(stack)
+				local name = item["VAR="]
+				variables["__globals"][name] = pop(stack)
+
+			elseif item["temp="] then --temp variable assignment
+				local name = item["temp="]
+				if variables[container.stitch] == nil then
+					variables[container.stitch] = {}
+				end
+				variables[container.stitch][name] = pop(stack)
+				
 			elseif item["->t->"] then --tunnel
 				M.run(M.find(item["->t->"], container), output, variables)
 
