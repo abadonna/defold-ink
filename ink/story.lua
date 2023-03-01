@@ -35,11 +35,28 @@ M.create = function(s)
 		Process.run(data, output, variables)
 
 		local answers = {}
-		for _, choice in ipairs(choices) do
-			table.insert(answers, choice.text)
+		local paragraphs = output.paragraphs
+	
+		if #choices == 1 and choices[1].fallback then
+			paragraphs, answers = story.continue(1)
+			for i, p in ipairs(output.paragraphs) do
+				table.insert(paragraphs, i, p)
+			end
+			
+		elseif #choices > 0 then
+			if choices[1].fallback then
+				table.remove(choices, 1)
+			end
+			for i, choice in ipairs(choices) do
+				if choice.fallback then
+					table.remove(choices, i)
+				else
+					table.insert(answers, choice.text)
+				end
+			end
 		end
 
-		return output.paragraphs, answers
+		return paragraphs, answers
 	end
 
 	if root.attributes["global decl"] then --init global variables

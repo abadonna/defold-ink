@@ -1,5 +1,9 @@
 local M = {}
 
+local function testflag(value, flag)
+	return bit.band(value, flag) == flag
+end
+
 local function get_variable(variables, container, name)
 	local value = variables["__globals"][name] 
 	if value then return value end
@@ -58,7 +62,7 @@ M.find = function(path, parent, keep_index)
 				container = container.attributes[part]
 			else
 				for i, item in ipairs(container.content) do
-					if item.is_container and item.attributes["#n"] == part then
+					if type(item) == "table" and item.is_container and item.attributes["#n"] == part then
 						if not keep_index then
 							container.index = i + 1
 						end
@@ -161,7 +165,21 @@ M.run = function(container, output, variables)
 					flag = item["flg"],
 					container = container
 				}
-				table.insert(output.choices, choice)
+
+				local valid = true
+				if testflag(item["flg"], 0x1) then -- check condition
+					valid = pop(stack)
+				end
+				if valid and testflag(item["flg"], 0x10) then --once only
+					valid = M.find(choice.path, container, true).visits == 0
+				end
+				if valid and testflag(item["flg"], 0x8) then --is fallback
+					valid = #output.choices == 0
+					choice.fallback = true
+				end
+				if valid then
+					table.insert(output.choices, choice)
+				end
 				output.text = {}
 
 			elseif item["#"] then --tag
