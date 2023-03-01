@@ -6,6 +6,7 @@ function init(self)
 	local story = ink.create(res)
 
 	repeat
+		pprint("======================")
 		local paragraphs, answers = story.continue(1)
 		for _, p in ipairs (paragraphs) do
 			pprint(p.text)
@@ -18,5 +19,7 @@ function init(self)
 			end
 		end
 	until #answers == 0 
+
+	pprint("- T H E - E N D -")
 	
 end

@@ -4,7 +4,11 @@ local Process = require "ink.process"
 local M = {}
 
 M.create = function(s)
-	local variables = {__globals = {}, __root = {}}
+	local variables = {
+		__globals = {}, 
+		__root = {}
+	}
+	
 	local data = json.decode(s)
 	local story = {variables = variables["__globals"]}
 
@@ -34,7 +38,7 @@ M.create = function(s)
 		for _, choice in ipairs(choices) do
 			table.insert(answers, choice.text)
 		end
-		
+
 		return output.paragraphs, answers
 	end
 

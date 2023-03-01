@@ -12,14 +12,31 @@ M.create = function(data, parent, name)
 		parent = parent, 
 		content = {},
 		attributes = {},
-		stitch = "__root"
+		stitch = "__root",
+		visits = 0
 	}
 
+	local keep_visits = false
+	local count_start_only = false
+
 	if parent then
-		container.name = parent.name .. "." .. container.name
+		container.name = #parent.name == 0 and container.name or (parent.name .. "." .. container.name)
 		container.stitch = parent.stitch
 	end
 
+	container.visit = function(name)
+		if (not count_start_only) and (name:sub(1, #container.name) == container.name) then return end
+		if not keep_visits then return end
+		if count_start_only and container.index > 1 then return end -- need to visit parent maybe?
+		
+		container.visits = container.visits  + 1
+		--pprint(container.name .. "|" .. name .. "|" .. container.visits)
+		
+		if parent then
+			parent.visit(name)
+		end
+	end
+	
 	container.is_end = function()
 		return container.index > #container.content
 	end
@@ -44,8 +61,14 @@ M.create = function(data, parent, name)
 			container.name = container.name .. "." .. attrs["#n"]
 		end
 
-		if parent and attrs["#f"] and testflag(attrs["#f"], 0x1) and not testflag(attrs["#f"], 0x4) then
-			container.stitch = container.name
+		if attrs["#f"] then --read container's flags
+			keep_visits = testflag(attrs["#f"], 0x1)
+			count_start_only = testflag(attrs["#f"], 0x4) 
+			
+			if parent and keep_visits and not count_start_only then
+				container.stitch = container.name
+			end
+
 		end
 
 		for key, value in pairs(attrs) do
@@ -59,7 +82,7 @@ M.create = function(data, parent, name)
 	for i, item in ipairs(data) do
 		if i < #data then
 			if type(item) == "table" and #item > 0 then
-				item = M.create(item, container)
+				item = M.create(item, container, tostring(i))
 			end
 			table.insert(container.content, item)
 		end

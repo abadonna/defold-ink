@@ -32,7 +32,7 @@ local function split(s, sep)
 	return res 
 end
 
-M.find = function(path, parent) 
+M.find = function(path, parent, keep_index) 
 
 	local parts = split(path, ".")
 	local container = parent
@@ -59,7 +59,9 @@ M.find = function(path, parent)
 			else
 				for i, item in ipairs(container.content) do
 					if item.is_container and item.attributes["#n"] == part then
-						container.index = i + 1
+						if not keep_index then
+							container.index = i + 1
+						end
 						container = item
 					end
 				end
@@ -67,11 +69,14 @@ M.find = function(path, parent)
 		end
 	end	
 
-	container.index = 1
+	if not keep_index then
+		container.index = 1
+	end
 	return container
 end
 
 M.run = function(container, output, variables)
+	container.visit("")
 	local stack = {}
 	while true do
 		local item = container.next()
@@ -145,6 +150,8 @@ M.run = function(container, output, variables)
 
 		elseif type(item) == "table" then
 			if item.is_container then -- inner container, go down hierachy
+				item.index = 1
+				item.visit(container.name)
 				container = item
 
 			elseif item["*"] then --choice point
@@ -163,7 +170,9 @@ M.run = function(container, output, variables)
 			elseif item["->"] then --divert
 				if (item["c"] == nil) or (item["c"] and pop(stack)) then --checking condition
 					local path = item["var"] and get_variable(variables, container, item["->"]) or item["->"]
+					local prev = container.name
 					container = M.find(path, container)
+					container.visit(prev)
 				end
 
 			elseif item["^->"] then --variable divert target -- only in stack?
@@ -174,7 +183,13 @@ M.run = function(container, output, variables)
 
 			elseif item["VAR="] then --variable assignment
 				local name = item["VAR="]
-				variables["__globals"][name] = pop(stack)
+				if not item["re"] or variables["__globals"][name] ~= nil then
+					variables["__globals"][name] = pop(stack)
+				elseif variables[container.stitch] and variables[container.stitch][name] ~= nil then
+					variables[container.stitch][name] = pop(stack)
+				else
+					variables["__root"][name] = pop(stack)
+				end
 
 			elseif item["temp="] then --temp variable assignment
 				local name = item["temp="]
@@ -182,6 +197,11 @@ M.run = function(container, output, variables)
 					variables[container.stitch] = {}
 				end
 				variables[container.stitch][name] = pop(stack)
+
+			elseif item["CNT?"] then --visits count
+				local target = M.find(item["CNT?"], container, true)
+				--pprint(item["CNT?"], target.visits)
+				table.insert(stack, target.visits)
 				
 			elseif item["->t->"] then --tunnel
 				M.run(M.find(item["->t->"], container), output, variables)
