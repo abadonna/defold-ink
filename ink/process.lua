@@ -163,7 +163,6 @@ local function run(container, output, variables, stack)
 			elseif item == "<>" then -- glue
 				glue_mode = true
 				glue_paragraph(output)
-
 			elseif item == "nop" then
 				--No-operation
 			elseif item == "void" then
@@ -173,6 +172,10 @@ local function run(container, output, variables, stack)
 			elseif item == "~ret" then
 				glue_paragraph(output) -- ??? not sure
 				break
+			elseif item == "thread" then --thread
+				--no idea if this would work
+				item = container.next()
+				run(find(item["->"], container), output, variables, stack)
 			else
 				assert(false, "unkown command " .. item)
 			end
@@ -266,10 +269,10 @@ local function run(container, output, variables, stack)
 					tunnel, output = coroutine.yield(true)
 					process.run(tunnel, output)
 				end
-		
 
 			elseif item["f()"] then --function
 				run(find(item["f()"], container), output, variables, stack)
+
 			else
 				local error = ""
 				for key,_ in pairs(item) do
@@ -295,17 +298,22 @@ M.create = function(variables)
 	}
 	
 	local co = nil
-	process.run = function(data, output, stack)
-		--data is container or choice info
+	process.run = function(data, output, stack) --data is container or choice info
 		local container = data.is_container and data or find(data.path, data.container)
+
+		--run(container, output, variables, stack)
+
 		if process.completed then
 			co = coroutine.create(function()
 				run(container, output, variables, stack)
 			end)
-			local _, check = coroutine.resume(co)
+			local ok, check = coroutine.resume(co)
+			if not ok then
+				pprint("ERROR", debug.traceback(co))
+			end
 			process.completed = check == nil
 		else
-			local _, check = coroutine.resume(co, container, output)
+			local error, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
 	end
