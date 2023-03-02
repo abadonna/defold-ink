@@ -15,12 +15,14 @@ M.create = function(s)
 	local root = Container.create(data.root)
 	local choices = {}
 
+	local process = Process.create(variables)
+	
 	story.continue = function(answer, data)
 		data = data or root
 		
 		if #choices > 0 then
 			assert(type(answer) == "number" and answer > 0 and answer <= #choices, "answer required")
-			data = Process.find(choices[answer].path, choices[answer].container)
+			data = choices[answer]
 		end
 		
 		choices = {}
@@ -32,7 +34,7 @@ M.create = function(s)
 			choices = choices
 		}
 
-		Process.run(data, output, variables)
+		process.run(data, output)
 
 		local answers = {}
 		local paragraphs = output.paragraphs

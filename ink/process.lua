@@ -46,7 +46,7 @@ local function split(s, sep)
 	return res 
 end
 
-M.find = function(path, parent, keep_index) 
+local function find(path, parent, keep_index) 
 
 	local parts = split(path, ".")
 	local container = parent
@@ -89,7 +89,7 @@ M.find = function(path, parent, keep_index)
 	return container
 end
 
-M.run = function(container, output, variables, stack)
+local function run(container, output, variables, stack)
 	local string_eval_mode = false
 	local glue_mode = false
 	container.visit("")
@@ -207,7 +207,7 @@ M.run = function(container, output, variables, stack)
 				end
 				
 				if valid and testflag(flags, 0x10) then --once only
-					valid = M.find(choice.path, container, true).visits == 0
+					valid = find(choice.path, container, true).visits == 0
 				end
 				if valid and testflag(flags, 0x8) then --is fallback
 					valid = #output.choices == 0
@@ -225,7 +225,7 @@ M.run = function(container, output, variables, stack)
 				if (item["c"] == nil) or (item["c"] and pop(stack)) then --checking condition
 					local path = item["var"] and get_variable(variables, container, item["->"]) or item["->"]
 					local prev = container.name
-					container = M.find(path, container)
+					container = find(path, container)
 					container.visit(prev)
 				end
 
@@ -253,15 +253,23 @@ M.run = function(container, output, variables, stack)
 				variables[container.stitch][name] = pop(stack)
 
 			elseif item["CNT?"] then --visits count
-				local target = M.find(item["CNT?"], container, true)
+				local target = find(item["CNT?"], container, true)
 				--pprint(item["CNT?"], target.visits)
 				table.insert(stack, target.visits)
 				
 			elseif item["->t->"] then --tunnel
-				M.run(M.find(item["->t->"], container), output, variables)
+				local process = M.create(variables)
+				local tunnel = find(item["->t->"], container)
+				process.run(tunnel, output)
+	
+				while #output.choices > 0 do
+					tunnel, output = coroutine.yield(true)
+					process.run(tunnel, output)
+				end
+		
 
 			elseif item["f()"] then --function
-				M.run(M.find(item["f()"], container), output, variables, stack)
+				run(find(item["f()"], container), output, variables, stack)
 			else
 				local error = ""
 				for key,_ in pairs(item) do
@@ -278,6 +286,30 @@ M.run = function(container, output, variables, stack)
 			container = container.parent
 		end
 	end
+end
+
+
+M.create = function(variables)
+	local process = {
+		completed = true
+	}
+	
+	local co = nil
+	process.run = function(data, output, stack)
+		--data is container or choice info
+		local container = data.is_container and data or find(data.path, data.container)
+		if process.completed then
+			co = coroutine.create(function()
+				run(container, output, variables, stack)
+			end)
+			local _, check = coroutine.resume(co)
+			process.completed = check == nil
+		else
+			local _, check = coroutine.resume(co, container, output)
+			process.completed = check == nil
+		end
+	end
+	return process
 end
 
 

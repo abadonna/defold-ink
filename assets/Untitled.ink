@@ -16,7 +16,10 @@ result: {sum(2,3)}
     -> END
 
 ===test
+->test2->
 tunneled text
+* [tunnel option1]
+-
 ->->
 
 ===check_param(value)
@@ -26,3 +29,10 @@ knot with parameter: {value}
 === function sum(a, b)
 calculating...
 	~ return a + b
+	
+	
+===test2
+
+* tunnel option2
+-
+->->
