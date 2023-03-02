@@ -80,6 +80,7 @@ M.find = function(path, parent, keep_index)
 end
 
 M.run = function(container, output, variables)
+	local string_eval_mode = false
 	container.visit("")
 	local stack = {}
 	while true do
@@ -93,7 +94,11 @@ M.run = function(container, output, variables)
 				output.tags = {}
 
 			elseif item:sub(1, 1) == "^" then --string value
-				table.insert(output.text, item:sub(2))
+				if string_eval_mode then
+					table.insert(stack, item:sub(2))
+				else
+					table.insert(output.text, item:sub(2))
+				end
 
 			elseif item == "done" then
 				break
@@ -104,8 +109,10 @@ M.run = function(container, output, variables)
 			elseif item == "/ev" then 
 				--
 			elseif item == "str" then 
+				string_eval_mode = true
 				--
 			elseif item == "/str" then 
+				string_eval_mode = false
 				--
 			elseif item == "out" then 
 				table.insert(output.text, pop(stack))
@@ -160,20 +167,28 @@ M.run = function(container, output, variables)
 
 			elseif item["*"] then --choice point
 				local choice = {
-					text = table.concat(output.text), 
+					text = "",
 					path = item["*"],
-					flag = item["flg"],
 					container = container
 				}
-
+				local flags = item["flg"]
 				local valid = true
-				if testflag(item["flg"], 0x1) then -- check condition
+				if testflag(flags, 0x1) then -- check condition
 					valid = pop(stack)
 				end
-				if valid and testflag(item["flg"], 0x10) then --once only
+
+				if testflag(flags, 0x4) then -- read choice-only content
+					choice.text = pop(stack)
+				end
+				
+				if testflag(flags, 0x2) then -- read start content
+					choice.text = pop(stack) .. choice.text
+				end
+				
+				if valid and testflag(flags, 0x10) then --once only
 					valid = M.find(choice.path, container, true).visits == 0
 				end
-				if valid and testflag(item["flg"], 0x8) then --is fallback
+				if valid and testflag(flags, 0x8) then --is fallback
 					valid = #output.choices == 0
 					choice.fallback = true
 				end

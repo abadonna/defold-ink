@@ -4,6 +4,18 @@ local function testflag(value, flag)
 	return bit.band(value, flag) == flag
 end
 
+local function clone(obj)
+	local copy = {}
+	for key, value in pairs(obj) do
+		if type(value) == "table" then
+			copy[key] = clone(value)
+		else
+			copy[key] = value
+		end
+	end
+	return copy
+end
+
 M.create = function(data, parent, name)
 	local container = {
 		name = name or "",
@@ -51,6 +63,8 @@ M.create = function(data, parent, name)
 	if type(data) ~= "table" then
 		return container
 	end
+
+	data = clone(data)
 
 	--read attributes first
 	local attrs = data[#data]

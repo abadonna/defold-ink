@@ -1,5 +1,9 @@
 Once upon a time...
 
+->check_param ("test param")
+
+-(back)
+
 ->test->
 
  * There were two choices.
@@ -11,3 +15,7 @@ Once upon a time...
 ===test
 tunneled text
 ->->
+
+===check_param(value)
+knot with parameter: {value}
+->back
