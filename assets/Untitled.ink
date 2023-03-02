@@ -4,7 +4,8 @@ Once upon a time...
 
 -(back)
 
-function result: {sum(2,3)}
+function <>
+result: {sum(2,3)}
 
 ->test->
 

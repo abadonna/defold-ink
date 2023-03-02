@@ -22,6 +22,16 @@ local function pop(stack)
 	return item
 end
 
+local function glue_paragraph(output)
+	if #output.text == 0 and #output.paragraphs > 0 then
+		local p = pop(output.paragraphs)
+		table.insert(output.text, p.text)
+		for i, tag in ipairs(p.tags) do
+			table.insert(output.tags, i, tag)
+		end
+	end
+end
+
 local function split(s, sep)
 	if sep == nil then
 		sep = '%s'
@@ -81,6 +91,7 @@ end
 
 M.run = function(container, output, variables, stack)
 	local string_eval_mode = false
+	local glue_mode = false
 	container.visit("")
 	stack = stack or {}
 	while true do
@@ -88,12 +99,15 @@ M.run = function(container, output, variables, stack)
 
 		if type(item) == "string" then
 			if item == "\n" then
-				local p = {text = table.concat(output.text), tags = output.tags}
-				table.insert(output.paragraphs, p)
-				output.text = {}
-				output.tags = {}
+				if not glue_mode then
+					local p = {text = table.concat(output.text), tags = output.tags}
+					table.insert(output.paragraphs, p)
+					output.text = {}
+					output.tags = {}
+				end
 
 			elseif item:sub(1, 1) == "^" then --string value
+				glue_mode = false
 				if string_eval_mode then
 					table.insert(stack, item:sub(2))
 				else
@@ -146,6 +160,10 @@ M.run = function(container, output, variables, stack)
 			elseif item == "!=" then
 				local value = pop(stack) ~= pop(stack)
 				table.insert(stack, value)
+			elseif item == "<>" then -- glue
+				glue_mode = true
+				glue_paragraph(output)
+
 			elseif item == "nop" then
 				--No-operation
 			elseif item == "void" then
@@ -153,6 +171,7 @@ M.run = function(container, output, variables, stack)
 			elseif item == "->->" then
 				break
 			elseif item == "~ret" then
+				glue_paragraph(output) -- ??? not sure
 				break
 			else
 				assert(false, "unkown command " .. item)
