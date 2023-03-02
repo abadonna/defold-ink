@@ -79,10 +79,10 @@ M.find = function(path, parent, keep_index)
 	return container
 end
 
-M.run = function(container, output, variables)
+M.run = function(container, output, variables, stack)
 	local string_eval_mode = false
 	container.visit("")
-	local stack = {}
+	stack = stack or {}
 	while true do
 		local item = container.next()
 
@@ -151,6 +151,8 @@ M.run = function(container, output, variables)
 			elseif item == "void" then
 				--
 			elseif item == "->->" then
+				break
+			elseif item == "~ret" then
 				break
 			else
 				assert(false, "unkown command " .. item)
@@ -239,6 +241,8 @@ M.run = function(container, output, variables)
 			elseif item["->t->"] then --tunnel
 				M.run(M.find(item["->t->"], container), output, variables)
 
+			elseif item["f()"] then --function
+				M.run(M.find(item["f()"], container), output, variables, stack)
 			else
 				local error = ""
 				for key,_ in pairs(item) do

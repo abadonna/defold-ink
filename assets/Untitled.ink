@@ -4,6 +4,8 @@ Once upon a time...
 
 -(back)
 
+function result: {sum(2,3)}
+
 ->test->
 
  * There were two choices.
@@ -19,3 +21,7 @@ tunneled text
 ===check_param(value)
 knot with parameter: {value}
 ->back
+
+=== function sum(a, b)
+calculating...
+	~ return a + b
