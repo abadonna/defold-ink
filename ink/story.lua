@@ -1,5 +1,6 @@
 local Container = require "ink.container"
-local Process = require "ink.process" 
+local Process = require "ink.process"
+local List = require "ink.list"
 
 local M = {}
 
@@ -7,6 +8,7 @@ M.create = function(s)
 	local context = {
 		__globals = {}, 
 		__root = {},
+		__lists = {},
 		__observers = {}
 	}
 	
@@ -60,6 +62,12 @@ M.create = function(s)
 		end
 
 		return paragraphs, answers
+	end
+
+	if data["listDefs"] then --init lists
+		for name, values in pairs(data["listDefs"]) do
+			context["__lists"][name] = List.create(values)
+		end
 	end
 
 	if root.attributes["global decl"] then --init global variables

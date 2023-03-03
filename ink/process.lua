@@ -1,18 +1,56 @@
+local List = require "ink.list"
 local M = {}
 
 local function testflag(value, flag)
 	return bit.band(value, flag) == flag
 end
 
+local function split(s, sep)
+	if sep == nil then
+		sep = '%s'
+	end 
+
+	local res = {}
+	local func = function(w)
+		table.insert(res, w)
+	end 
+
+	string.gsub(s, '[^'..sep..']+', func)
+	return res 
+end
+
 local function get_variable(context, container, name)
 	local value = context["__globals"][name] 
 	if value then return value end
 
-	value = context[container.stitch][name]
+	--check if temp variable
+	value = context[container.stitch] and context[container.stitch][name] or nil
 	if value then return value end
 
-	value = context["__root"][name]
-	return value
+	value = context["__root"][name] -- temp without stitch
+	if value then return value end
+
+	-- check if list item
+	local parts = split(name, ".") 
+	if #parts == 2 then
+		local list = context["__lists"][parts[1]]
+		if list[parts[2]] then
+			value = List.create()
+			value[name] = list[parts[2]]
+			return value
+		end
+	end
+
+	for lname, list in pairs(context["__lists"]) do
+		for key, v in pairs(list) do
+			if key == name then
+				value = List.create()
+				value[lname ..".".. key] = v
+				return value
+			end
+		end
+	end
+	return nil
 end
 
 local function pop(stack)
@@ -30,20 +68,6 @@ local function glue_paragraph(output)
 			table.insert(output.tags, i, tag)
 		end
 	end
-end
-
-local function split(s, sep)
-	if sep == nil then
-		sep = '%s'
-	end 
-
-	local res = {}
-	local func = function(w)
-		table.insert(res, w)
-	end 
-
-	string.gsub(s, '[^'..sep..']+', func)
-	return res 
 end
 
 local function find(path, parent, keep_index) 
@@ -89,9 +113,13 @@ local function find(path, parent, keep_index)
 	return container
 end
 
+local EXIT = 1
+local FUNCTION_RET = 2
+
 local function run(container, output, context, stack)
 	local string_eval_mode = false
 	local glue_mode = false
+
 	container.visit("")
 	stack = stack or {}
 	while true do
@@ -128,50 +156,103 @@ local function run(container, output, context, stack)
 			elseif item == "/str" then 
 				string_eval_mode = false
 				--
-			elseif item == "out" then 
-				table.insert(output.text, pop(stack))
+			elseif item == "out" then
+				local value = pop(stack)
+				if type(value) == "table" then --list?
+					local temp = {}
+					for key, _ in pairs(value) do
+						local parts = split(key, ".")
+						table.insert(temp, parts[#parts])
+					end
+					value = table.concat(temp, ", ")
+				end
+				table.insert(output.text, value)
+
 			elseif item == "+" then
-				local value = pop(stack) + pop(stack)
-				table.insert(stack, value)
+				local v1 = pop(stack)
+				local v2 = pop(stack)
+				table.insert(stack, v1 + v2)
+				
 			elseif item == "-" then
-				local value = - pop(stack) + pop(stack)
-				table.insert(stack, value)
+				local v1 = pop(stack)
+				local v2 = pop(stack)
+				table.insert(stack, v2 - v1)
+				
 			elseif item == "*" then
 				local value = pop(stack) * pop(stack)
 				table.insert(stack, value)
+				
 			elseif item == "/" then
 				local value = 1 / pop(stack) * pop(stack)
 				table.insert(stack, value)
+				
 			elseif item == "==" then
-				local value = pop(stack) == pop(stack)
-				table.insert(stack, value)
+				local v1 = pop(stack)
+				local v2 = pop(stack)			
+				table.insert(stack,  v1 == v2)
+
+				
 			elseif item == ">" then
-				local value = pop(stack) < pop(stack)
-				table.insert(stack, value)
+				local v1 = pop(stack)
+				local v2 = pop(stack)
+				table.insert(stack, v1 < v2)
+				
 			elseif item == ">=" then
-				local value = pop(stack) <= pop(stack)
-				table.insert(stack, value)
+				local v1 = pop(stack)
+				local v2 = pop(stack)
+				table.insert(stack, v1 <= v2)
+				
 			elseif item == "<" then
-				local value = pop(stack) > pop(stack)
-				table.insert(stack, value)
+				local v2 = pop(stack)
+				local v1 = pop(stack)
+				table.insert(stack,  v1 < v2)
+				
 			elseif item == "<=" then
-				local value = pop(stack) >= pop(stack)
-				table.insert(stack, value)
+				local v2 = pop(stack)
+				local v1 = pop(stack)
+				table.insert(stack, v1 <= v2)
+				
 			elseif item == "!=" then
-				local value = pop(stack) ~= pop(stack)
-				table.insert(stack, value)
+				local v1 = pop(stack)
+				local v2 = pop(stack)
+				table.insert(stack,  v1 ~= v2)
+				
 			elseif item == "<>" then -- glue
 				glue_mode = true
 				glue_paragraph(output)
+				
+			elseif item == "?" then --containment
+				local v1 = pop(stack)
+				local v2 = pop(stack)
+				local result = true
+				for key, _ in pairs(v1) do
+					if v2[key] == nil then
+						result = false
+						break
+					end
+				end
+				table.insert(stack, result)
+				
+			elseif item == "!?" then -- 
+				local v1 = pop(stack)
+				local v2 = pop(stack)
+				local result = false
+				for key, _ in pairs(v1) do
+					if v2[key] == nil then
+						result = true
+						break
+					end
+				end
+				table.insert(stack, result)
+				
 			elseif item == "nop" then
 				--No-operation
 			elseif item == "void" then
-				--
+				table.insert(stack, "")
 			elseif item == "->->" then
 				break
 			elseif item == "~ret" then
-				glue_paragraph(output) -- ??? not sure
-				break
+				return FUNCTION_RET
 			elseif item == "thread" then --thread
 				--no idea if this would work
 				item = container.next()
@@ -276,7 +357,13 @@ local function run(container, output, context, stack)
 				end
 
 			elseif item["f()"] then --function
-				run(find(item["f()"], container), output, context, stack)
+				if FUNCTION_RET ~= run(find(item["f()"], container), output, context, stack) then
+					table.insert(stack, "") --if not return in function we miss void on stack
+				end
+				glue_paragraph(output) -- ??? not sure
+
+			elseif item["list"] then
+				table.insert(stack, item["list"])
 
 			else
 				local error = ""
@@ -294,6 +381,8 @@ local function run(container, output, context, stack)
 			container = container.parent
 		end
 	end
+
+	return EXIT
 end
 
 
@@ -321,6 +410,7 @@ M.create = function(context)
 			local error, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
+		
 	end
 	return process
 end
