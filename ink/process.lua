@@ -4,14 +4,14 @@ local function testflag(value, flag)
 	return bit.band(value, flag) == flag
 end
 
-local function get_variable(variables, container, name)
-	local value = variables["__globals"][name] 
+local function get_variable(context, container, name)
+	local value = context["__globals"][name] 
 	if value then return value end
 
-	value = variables[container.stitch][name]
+	value = context[container.stitch][name]
 	if value then return value end
 
-	value = variables["__root"][name]
+	value = context["__root"][name]
 	return value
 end
 
@@ -89,7 +89,7 @@ local function find(path, parent, keep_index)
 	return container
 end
 
-local function run(container, output, variables, stack)
+local function run(container, output, context, stack)
 	local string_eval_mode = false
 	local glue_mode = false
 	container.visit("")
@@ -175,7 +175,7 @@ local function run(container, output, variables, stack)
 			elseif item == "thread" then --thread
 				--no idea if this would work
 				item = container.next()
-				run(find(item["->"], container), output, variables, stack)
+				run(find(item["->"], container), output, context, stack)
 			else
 				assert(false, "unkown command " .. item)
 			end
@@ -226,7 +226,7 @@ local function run(container, output, variables, stack)
 
 			elseif item["->"] then --divert
 				if (item["c"] == nil) or (item["c"] and pop(stack)) then --checking condition
-					local path = item["var"] and get_variable(variables, container, item["->"]) or item["->"]
+					local path = item["var"] and get_variable(context, container, item["->"]) or item["->"]
 					local prev = container.name
 					container = find(path, container)
 					container.visit(prev)
@@ -236,24 +236,29 @@ local function run(container, output, variables, stack)
 				table.insert(stack, item["^->"])
 
 			elseif item["VAR?"] then --variable
-				table.insert(stack, get_variable(variables, container, item["VAR?"]))
+				table.insert(stack, get_variable(context, container, item["VAR?"]))
 
 			elseif item["VAR="] then --variable assignment
 				local name = item["VAR="]
-				if not item["re"] or variables["__globals"][name] ~= nil then
-					variables["__globals"][name] = pop(stack)
-				elseif variables[container.stitch] and variables[container.stitch][name] ~= nil then
-					variables[container.stitch][name] = pop(stack)
+				if not item["re"] or context["__globals"][name] ~= nil then
+					context["__globals"][name] = pop(stack)
+					if context["__observers"][name] then -- execute observers
+						for _, f in ipairs(context["__observers"][name]) do
+							f(context["__globals"][name])
+						end
+					end
+				elseif context[container.stitch] and context[container.stitch][name] ~= nil then
+					context[container.stitch][name] = pop(stack)
 				else
-					variables["__root"][name] = pop(stack)
+					context["__root"][name] = pop(stack)
 				end
 
 			elseif item["temp="] then --temp variable assignment
 				local name = item["temp="]
-				if variables[container.stitch] == nil then
-					variables[container.stitch] = {}
+				if context[container.stitch] == nil then
+					context[container.stitch] = {}
 				end
-				variables[container.stitch][name] = pop(stack)
+				context[container.stitch][name] = pop(stack)
 
 			elseif item["CNT?"] then --visits count
 				local target = find(item["CNT?"], container, true)
@@ -261,7 +266,7 @@ local function run(container, output, variables, stack)
 				table.insert(stack, target.visits)
 				
 			elseif item["->t->"] then --tunnel
-				local process = M.create(variables)
+				local process = M.create(context)
 				local tunnel = find(item["->t->"], container)
 				process.run(tunnel, output)
 	
@@ -271,7 +276,7 @@ local function run(container, output, variables, stack)
 				end
 
 			elseif item["f()"] then --function
-				run(find(item["f()"], container), output, variables, stack)
+				run(find(item["f()"], container), output, context, stack)
 
 			else
 				local error = ""
@@ -292,7 +297,7 @@ local function run(container, output, variables, stack)
 end
 
 
-M.create = function(variables)
+M.create = function(context)
 	local process = {
 		completed = true
 	}
@@ -301,11 +306,11 @@ M.create = function(variables)
 	process.run = function(data, output, stack) --data is container or choice info
 		local container = data.is_container and data or find(data.path, data.container)
 
-		--run(container, output, variables, stack)
+		--run(container, output, context, stack)
 
 		if process.completed then
 			co = coroutine.create(function()
-				run(container, output, variables, stack)
+				run(container, output, context, stack)
 			end)
 			local ok, check = coroutine.resume(co)
 			if not ok then

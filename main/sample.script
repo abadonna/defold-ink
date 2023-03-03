@@ -2,7 +2,7 @@ local ink = require "ink.story"
 
 function init(self)
 
-	local res = sys.load_resource("/assets/threads.json")
+	local res = sys.load_resource("/assets/test.json")
 	local story = ink.create(res)
 
 	repeat

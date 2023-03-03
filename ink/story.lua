@@ -4,18 +4,19 @@ local Process = require "ink.process"
 local M = {}
 
 M.create = function(s)
-	local variables = {
+	local context = {
 		__globals = {}, 
-		__root = {}
+		__root = {},
+		__observers = {}
 	}
 	
 	local data = json.decode(s)
-	local story = {variables = variables["__globals"]}
+	local story = {variables = context["__globals"]}
 
 	local root = Container.create(data.root)
 	local choices = {}
 
-	local process = Process.create(variables)
+	local process = Process.create(context)
 	
 	story.continue = function(answer, data)
 		data = data or root
@@ -63,6 +64,55 @@ M.create = function(s)
 
 	if root.attributes["global decl"] then --init global variables
 		story.continue(0, root.attributes["global decl"])
+	end
+
+	story.add_observer = function(var, f)
+		if context["__observers"][var] == nil then
+			context["__observers"][var] = {}
+		end
+		table.insert(context["__observers"][var], f)
+	end
+	
+	story.remove_observer = function(var, f)
+		if not context["__observers"][var] then return end
+
+		if f == nil then 
+			context["__observers"][var] = nil
+			return
+		end
+		
+		for i, observer in ipairs(context["__observers"][var]) do
+			if observer == f then
+				table.remove(context["__observers"][var], i)
+				break
+			end
+		end
+		
+	end
+
+	story.assign_value = function(name, value)
+		context["__globals"][name] = value
+		if context["__observers"][name] then -- execute observers
+			for _, f in ipairs(context["__observers"][name]) do
+				f(context["__globals"][name])
+			end
+		end
+	end
+
+	story.bind = function(name, f)
+		assert(false, "not implemeted")
+	end
+
+	story.jump = function(path)
+		assert(false, "not implemeted")
+	end
+
+	story.load = function(state)
+		assert(false, "not implemeted")
+	end
+
+	story.save = function()
+		assert(false, "not implemeted")
 	end
 	
 	return story
