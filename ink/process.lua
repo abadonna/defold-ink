@@ -113,6 +113,19 @@ local function find(path, parent, keep_index)
 	return container
 end
 
+local function find_tags_in_path(path, parent)
+	local tags = {}
+	local container = find(path, parent, true)
+	for _, item in ipairs(container.content) do
+		if type(item) == "table" and item["#"] then
+			table.insert(tags, item["#"])
+		elseif type(item) == "string" and item:sub(1, 1) == "^" then
+			break --paragraph? stop collecting tags for choice
+		end
+	end
+	return tags
+end
+
 local EXIT = 1
 local FUNCTION_RET = 2
 
@@ -168,6 +181,11 @@ local function run(container, output, context, stack)
 			elseif item == "seq" then
 				local value = math.random(0, pop(stack)-1)
 				table.insert(stack, value)
+
+			elseif item == "rnd" then
+				local v2 = pop(stack)
+				local v1 = pop(stack)
+				table.insert(stack, math.random(v1, v2))
 				
 			elseif item == "out" then
 				local value = pop(stack)
@@ -324,6 +342,8 @@ local function run(container, output, context, stack)
 					path = item["*"],
 					container = container
 				}
+				--todo: apply current tags to previous paragraph?
+				
 				local flags = item["flg"]
 				local valid = true
 				if testflag(flags, 0x1) then -- check condition
@@ -346,6 +366,7 @@ local function run(container, output, context, stack)
 					choice.fallback = true
 				end
 				if valid then
+					choice.tags = find_tags_in_path(choice.path, choice.container)
 					table.insert(output.choices, choice)
 				end
 				output.text = {}
@@ -458,7 +479,7 @@ M.create = function(context)
 			local ok, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
-		
+
 	end
 	return process
 end

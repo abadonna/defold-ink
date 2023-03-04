@@ -18,7 +18,7 @@ function init(self)
 		if #answers > 0 then
 			pprint("----------------------")
 			for i, a in ipairs (answers) do
-				pprint("[" .. i .. "] " .. a)
+				pprint("[" .. i .. "] " .. a.text)
 			end
 		end
 	until #answers == 0 

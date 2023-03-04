@@ -66,7 +66,7 @@ M.create = function(s)
 				if choice.fallback then
 					table.remove(choices, i)
 				else
-					table.insert(answers, choice.text)
+					table.insert(answers, {text = choice.text, tags = choice.tags})
 				end
 			end
 		end
