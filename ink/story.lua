@@ -149,6 +149,17 @@ M.create = function(s)
 		
 		return state
 	end
+
+	story.eval = function(expression)
+
+		for name, value in pairs(story.variables) do
+			expression = expression:gsub("([^%w_])".. name .. "([^%w_])", "%1".. value .. "%2")
+			expression = expression:gsub("([^%w_])".. name .. "$", "%1".. value)
+			expression = expression:gsub("^".. name .. "([^%w_])", value .. "%1")
+		end
+
+		return load("return " .. expression)()
+	end
 	
 	return story
 end
