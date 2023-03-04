@@ -153,9 +153,9 @@ M.create = function(s)
 	story.eval = function(expression)
 
 		for name, value in pairs(story.variables) do
-			expression = expression:gsub("([^%w_])".. name .. "([^%w_])", "%1".. value .. "%2")
-			expression = expression:gsub("([^%w_])".. name .. "$", "%1".. value)
-			expression = expression:gsub("^".. name .. "([^%w_])", value .. "%1")
+			expression = expression:gsub("([^%w_])".. name .. "([^%w_])", "%1".. tostring(value) .. "%2")
+			expression = expression:gsub("([^%w_])".. name .. "$", "%1".. tostring(value))
+			expression = expression:gsub("^".. name .. "([^%w_])", tostring(value) .. "%1")
 		end
 
 		return load("return " .. expression)()
