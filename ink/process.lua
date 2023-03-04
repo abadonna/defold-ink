@@ -129,27 +129,25 @@ end
 local EXIT = 1
 local FUNCTION_RET = 2
 
-local function run(container, output, context, stack)
-	local string_eval_mode = false
-	local glue_mode = false
-
-	container.visit("")
+local function run(container, output, context, from, stack)
+	container.visit(from)
 	stack = stack or {}
 	while true do
 		local item = container.next()
 
 		if type(item) == "string" then
 			if item == "\n" then
-				if #output.text > 0 and not glue_mode then
+				if #output.text > 0 and not context["__glue_mode"] then
 					local p = {text = table.concat(output.text), tags = output.tags}
+					p.text = p.text:gsub("^%s*(.-)%s*$", "%1") --trim
 					table.insert(output.paragraphs, p)
 					output.text = {}
 					output.tags = {}
 				end
 
 			elseif item:sub(1, 1) == "^" then --string value
-				glue_mode = false
-				if string_eval_mode then
+				context["__glue_mode"] = false
+				if context["__string_eval_mode"] then
 					table.insert(stack, item:sub(2))
 				else
 					table.insert(output.text, item:sub(2))
@@ -170,10 +168,10 @@ local function run(container, output, context, stack)
 			elseif item == "/ev" then 
 				--
 			elseif item == "str" then 
-				string_eval_mode = true
+				context["__string_eval_mode"] = true
 				--
 			elseif item == "/str" then 
-				string_eval_mode = false
+				context["__string_eval_mode"] = false
 				--
 			elseif item == "pop" then
 				pop(stack)
@@ -272,7 +270,7 @@ local function run(container, output, context, stack)
 				table.insert(stack,  v1 ~= v2)
 				
 			elseif item == "<>" then -- glue
-				glue_mode = true
+				context["__glue_mode"] = true
 				glue_paragraph(output)
 
 			elseif item == "&&" then -- logical and
@@ -319,7 +317,7 @@ local function run(container, output, context, stack)
 			elseif item == "thread" then --thread
 				--no idea if this would work
 				item = container.next()
-				run(find(item["->"], container), output, context, stack)
+				run(find(item["->"], container), output, context, container.name, stack)
 			else
 				assert(false, "unkown command " .. item)
 			end
@@ -333,8 +331,7 @@ local function run(container, output, context, stack)
 		elseif type(item) == "table" then
 			if item.is_container then -- inner container, go down hierachy
 				item.index = 1
-				item.visit(container.name)
-				container = item
+				run(item, output, context, container.name, stack)
 
 			elseif item["*"] then --choice point
 				local choice = {
@@ -377,9 +374,7 @@ local function run(container, output, context, stack)
 			elseif item["->"] then --divert
 				if (item["c"] == nil) or (item["c"] and pop(stack)) then --checking condition
 					local path = item["var"] and get_variable(context, container, item["->"]) or item["->"]
-					local prev = container.name
-					container = find(path, container)
-					container.visit(prev)
+					run(find(path, container), output, context,  container.name, stack)
 				end
 
 			elseif item["^->"] then --variable divert target -- only in stack?
@@ -418,7 +413,7 @@ local function run(container, output, context, stack)
 			elseif item["->t->"] then --tunnel
 				local process = M.create(context)
 				local tunnel = find(item["->t->"], container)
-				process.run(tunnel, output)
+				process.run(tunnel, output, container.name)
 	
 				while #output.choices > 0 do
 					tunnel, output = coroutine.yield(true)
@@ -426,8 +421,8 @@ local function run(container, output, context, stack)
 				end
 
 			elseif item["f()"] then --function
-				if FUNCTION_RET ~= run(find(item["f()"], container), output, context, stack) then
-					table.insert(stack, "") --if not return in function we miss void on stack
+				if FUNCTION_RET ~= run(find(item["f()"], container), output, context, container.name, stack) then
+					table.insert(stack, "") --if no return in function we miss void on stack
 				end
 				glue_paragraph(output) -- ??? not sure
 
@@ -443,11 +438,9 @@ local function run(container, output, context, stack)
 			end
 		end
 
-		if container.is_end() then
-			if not container.parent then
-				break
-			end
-			container = container.parent
+		if container.is_end() then		
+			break
+			
 		end
 	end
 
@@ -461,14 +454,17 @@ M.create = function(context)
 	}
 	
 	local co = nil
-	process.run = function(data, output, stack) --data is container or choice info
+	process.run = function(data, output, from, stack) --data is container or choice info
+		context["__string_eval_mode"] = false
+		context["__glue_mode"] = false
+		
 		local container = data.is_container and data or find(data.path, data.container)
 
-		--run(container, output, context, stack)
+		--run(container, output, context, from, stack)
 
 		if process.completed then
 			co = coroutine.create(function()
-				run(container, output, context, stack)
+				run(container, output, context, from, stack)
 			end)
 			local ok, check = coroutine.resume(co)
 			if not ok then

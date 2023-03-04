@@ -37,6 +37,7 @@ M.create = function(data, parent, name)
 	end
 
 	container.visit = function(name)
+		name = name or ""
 		if (not count_start_only) and (name:sub(1, #container.name) == container.name) then return end
 		if not keep_visits then return end
 		if count_start_only and container.index > 1 then return end -- need to visit parent maybe?
