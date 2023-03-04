@@ -2,8 +2,11 @@ local ink = require "ink.story"
 
 function init(self)
 
-	local res = sys.load_resource("/assets/test.json")
+	local res = sys.load_resource("/assets/list.json")
 	local story = ink.create(res)
+
+	--local filename = sys.get_save_file("inktest", "story")
+	--sys.save(filename, story.save())
 
 	repeat
 		pprint("======================")

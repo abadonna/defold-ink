@@ -21,14 +21,14 @@ end
 
 local function get_variable(context, container, name)
 	local value = context["__globals"][name] 
-	if value then return value end
+	if value ~= nil then return value end
 
 	--check if temp variable
 	value = context[container.stitch] and context[container.stitch][name] or nil
-	if value then return value end
+	if value ~= nil then return value end
 
 	value = context["__root"][name] -- temp without stitch
-	if value then return value end
+	if value ~= nil then return value end
 
 	-- check if list item
 	local parts = split(name, ".") 
@@ -227,7 +227,6 @@ local function run(container, output, context, stack)
 				local v1 = pop(stack)
 				local v2 = pop(stack)			
 				table.insert(stack,  v1 == v2)
-
 				
 			elseif item == ">" then
 				local v1 = pop(stack)
@@ -257,6 +256,15 @@ local function run(container, output, context, stack)
 			elseif item == "<>" then -- glue
 				glue_mode = true
 				glue_paragraph(output)
+
+			elseif item == "&&" then -- logical and
+				table.insert(stack, pop(stack) and pop(stack))
+
+			elseif item == "||" then -- logical or
+				table.insert(stack, pop(stack) or pop(stack))
+
+			elseif item == "!" then -- unary not
+				table.insert(stack, not pop(stack))
 				
 			elseif item == "?" then --containment
 				local v1 = pop(stack)
@@ -299,6 +307,9 @@ local function run(container, output, context, stack)
 			end
 
 		elseif type(item) == "number" then
+			table.insert(stack, item)
+
+		elseif type(item) == "boolean" then
 			table.insert(stack, item)
 
 		elseif type(item) == "table" then
@@ -447,6 +458,7 @@ M.create = function(context)
 			local ok, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
+		
 	end
 	return process
 end

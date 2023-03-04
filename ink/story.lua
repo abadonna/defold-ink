@@ -130,7 +130,24 @@ M.create = function(s)
 	end
 
 	story.save = function()
-		assert(false, "not implemeted")
+		local state = {context = {}}
+		for key, value in pairs(context) do
+			if key ~= "__observers" and  key ~= "__lists" then
+				state.context[key] = value
+			end
+		end
+
+		state.root = root.get_state()
+
+		state.choices = {}
+		for _, choice in ipairs(choices) do
+			table.insert(state.choices, {
+				path = choice.path,
+				name = choice.container.name
+			})
+		end
+		
+		return state
 	end
 	
 	return story
