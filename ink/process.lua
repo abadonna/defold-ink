@@ -116,10 +116,10 @@ end
 local function find_tags_in_path(path, parent)
 	local tags = {}
 	local container = find(path, parent, true)
-	for _, item in ipairs(container.content) do
+	for i, item in ipairs(container.content) do
 		if type(item) == "table" and item["#"] then
 			table.insert(tags, item["#"])
-		elseif type(item) == "string" and item:sub(1, 1) == "^" then
+		elseif item == "\n" then
 			break --paragraph? stop collecting tags for choice
 		end
 	end
