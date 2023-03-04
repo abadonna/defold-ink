@@ -11,8 +11,18 @@ M.create = function(s)
 		__lists = {},
 		__observers = {}
 	}
+
+	math.randomseed(os.time())
 	
-	local data = json.decode(s)
+	local data
+	local status, err = pcall(function()
+		data = json.decode(s)
+	end) 
+
+	if not status then
+		error("JSON read error, make sure it's utf-8.\n" .. err)
+	end
+	
 	local story = {variables = context["__globals"]}
 
 	local root = Container.create(data.root)

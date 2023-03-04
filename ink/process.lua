@@ -127,7 +127,7 @@ local function run(container, output, context, stack)
 
 		if type(item) == "string" then
 			if item == "\n" then
-				if not glue_mode then
+				if #output.text > 0 and not glue_mode then
 					local p = {text = table.concat(output.text), tags = output.tags}
 					table.insert(output.paragraphs, p)
 					output.text = {}
@@ -145,6 +145,12 @@ local function run(container, output, context, stack)
 			elseif item == "done" then
 				break
 			elseif item == "end" then
+				if  #output.text > 0 then
+					local p = {text = table.concat(output.text), tags = output.tags}
+					table.insert(output.paragraphs, p)
+					output.text = {}
+					output.tags = {}
+				end
 				break
 			elseif item == "ev" then --  start evaluation mode, objects are added to an evaluation stack
 				--
@@ -156,6 +162,13 @@ local function run(container, output, context, stack)
 			elseif item == "/str" then 
 				string_eval_mode = false
 				--
+			elseif item == "pop" then
+				pop(stack)
+
+			elseif item == "seq" then
+				local value = math.random(0, pop(stack)-1)
+				table.insert(stack, value)
+				
 			elseif item == "out" then
 				local value = pop(stack)
 				if type(value) == "table" then --list?
@@ -167,6 +180,30 @@ local function run(container, output, context, stack)
 					value = table.concat(temp, ", ")
 				end
 				table.insert(output.text, value)
+
+			elseif item == "du" then	--duplicate
+				local obj = pop(stack)
+				table.insert(stack, obj)
+				if type(obj) == "table" then
+					local copy = List.create(obj)
+					table.insert(stack, obj)
+				else
+					table.insert(stack, obj)
+				end
+
+			elseif item == "%" then
+				local v2 = pop(stack)
+				local v1 = pop(stack)
+				table.insert(stack, math.fmod(v1, v2))
+				
+			elseif item == "visit" then
+				table.insert(stack, container.visits - 1)
+
+			elseif item == "MIN" then
+				table.insert(stack, math.min(pop(stack), pop(stack)))
+
+			elseif item == "MAX" then
+				table.insert(stack, math.max(pop(stack), pop(stack)))
 
 			elseif item == "+" then
 				local v1 = pop(stack)
@@ -407,10 +444,9 @@ M.create = function(context)
 			end
 			process.completed = check == nil
 		else
-			local error, check = coroutine.resume(co, container, output)
+			local ok, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
-		
 	end
 	return process
 end
