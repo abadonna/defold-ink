@@ -17,5 +17,5 @@ custom_resources = /assets
 version = 0.1
 
 [library]
-include_dirs = /ink
+include_dirs = ink
 
