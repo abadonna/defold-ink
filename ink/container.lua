@@ -43,19 +43,14 @@ M.create = function(data, parent, name)
 		if count_start_only and container.index > 1 then return end -- need to visit parent maybe?
 		
 		container.visits = container.visits  + 1
-		--pprint(container.name .. "|" .. name .. "|" .. container.visits)
 		
 		if parent then
 			parent.visit(name)
 		end
 	end
 	
-	container.is_end = function()
-		return container.index > #container.content
-	end
-	
 	container.next = function() 
-		if container.is_end() then return nil end
+		if container.index > #container.content then return nil end
 		local item = container.content[container.index]
 		container.index = container.index + 1
 		return item
@@ -82,6 +77,7 @@ M.create = function(data, parent, name)
 			
 			if parent and keep_visits and not count_start_only then
 				container.stitch = container.name
+				container.is_stitch = true
 			end
 
 		end

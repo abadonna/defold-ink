@@ -336,7 +336,7 @@ local function run(container, output, context, from, stack)
 
 		elseif type(item) == "table" then
 			if item.is_container then -- inner container, go down hierachy
-				--item.index = 1
+				item.index = 1
 				run(item, output, context, container.name, stack)
 
 			elseif item["*"] then --choice point
@@ -444,8 +444,8 @@ local function run(container, output, context, from, stack)
 			end
 		end
 
-		if container.is_end() then
-			if container.parent then
+		if item == nil then
+			if container.parent and not container.is_stitch then
 				container = container.parent
 			else
 				return DONE

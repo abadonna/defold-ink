@@ -1,1 +1,115 @@
-{"inkVersion":20,"root":[[{"->":"waiting_room"},["done",{"#f":5,"#n":"g-0"}],null],"done",{"whos_in_today":["^In the surgery today are ","ev",{"VAR?":"DoctorsInSurgery"},"out","/ev","^.","\n",{"#f":1}],"doctorEnters":[{"temp=":"who"},"ev",{"VAR?":"DoctorsInSurgery"},{"VAR?":"who"},"!?","/ev",[{"->":".^.b","c":true},{"b":["\n","ev",{"VAR?":"DoctorsInSurgery"},{"VAR?":"who"},"+",{"VAR=":"DoctorsInSurgery","re":true},"/ev","^Dr ","ev",{"VAR?":"who"},"out","/ev","^ arrives in a fluster.","\n",{"->":".^.^.^.7"},null]}],"nop","\n",{"#f":1}],"doctorLeaves":[{"temp=":"who"},"ev",{"VAR?":"DoctorsInSurgery"},{"VAR?":"who"},"?","/ev",[{"->":".^.b","c":true},{"b":["\n","ev",{"VAR?":"DoctorsInSurgery"},{"VAR?":"who"},"-",{"VAR=":"DoctorsInSurgery","re":true},"/ev","^Dr ","ev",{"VAR?":"who"},"out","/ev","^ leaves for lunch.","\n",{"->":".^.^.^.7"},null]}],"nop","\n",{"#f":1}],"waiting_room":[["ev",{"f()":"whos_in_today"},"out","/ev","\n","ev","str","^Time passes...","/str","/ev",{"*":".^.c-0","flg":20},{"c-0":["\n","ev",{"VAR?":"Adams"},{"f()":"doctorLeaves"},"out","/ev","^ ","ev",{"VAR?":"Cartwright"},{"f()":"doctorEnters"},"out","/ev","^ ","ev",{"VAR?":"Eamonn"},{"f()":"doctorEnters"},"out","/ev","\n","ev",{"f()":"whos_in_today"},"out","/ev","\n","end",{"#f":5}]}],{"#f":1}],"global decl":["ev",{"list":{"DoctorsInSurgery.Adams":1,"DoctorsInSurgery.Denver":4}},{"VAR=":"DoctorsInSurgery"},"/ev","end",null],"#f":1}],"listDefs":{"DoctorsInSurgery":{"Adams":1,"Bernard":2,"Cartwright":3,"Denver":4,"Eamonn":5}}}
+{
+    "inkVersion": 20,
+    "root": [
+        [{
+                "->": "waiting_room"
+            },
+            ["done", {
+                "#f": 5,
+                "#n": "g-0"
+            }], null
+        ], "done", {
+            "whos_in_today": ["^In the surgery today are ", "ev", {
+                "VAR?": "DoctorsInSurgery"
+            }, "out", "/ev", "^.", "\n", {
+                "#f": 1
+            }],
+            "doctorEnters": [{
+                "temp=": "who"
+            }, "ev", {
+                "VAR?": "DoctorsInSurgery"
+            }, {
+                "VAR?": "who"
+            }, "!?", "/ev", [{
+                "->": ".^.b",
+                "c": true
+            }, {
+                "b": ["\n", "ev", {
+                    "VAR?": "DoctorsInSurgery"
+                }, {
+                    "VAR?": "who"
+                }, "+", {
+                    "VAR=": "DoctorsInSurgery",
+                    "re": true
+                }, "/ev", "^Dr ", "ev", {
+                    "VAR?": "who"
+                }, "out", "/ev", "^ arrives in a fluster.", "\n", {
+                    "->": ".^.^.^.7"
+                }, null]
+            }], "nop", "\n", {
+                "#f": 1
+            }],
+            "doctorLeaves": [{
+                "temp=": "who"
+            }, "ev", {
+                "VAR?": "DoctorsInSurgery"
+            }, {
+                "VAR?": "who"
+            }, "?", "/ev", [{
+                "->": ".^.b",
+                "c": true
+            }, {
+                "b": ["\n", "ev", {
+                    "VAR?": "DoctorsInSurgery"
+                }, {
+                    "VAR?": "who"
+                }, "-", {
+                    "VAR=": "DoctorsInSurgery",
+                    "re": true
+                }, "/ev", "^Dr ", "ev", {
+                    "VAR?": "who"
+                }, "out", "/ev", "^ leaves for lunch.", "\n", {
+                    "->": ".^.^.^.7"
+                }, null]
+            }], "nop", "\n", {
+                "#f": 1
+            }],
+            "waiting_room": [
+                ["ev", {
+                    "f()": "whos_in_today"
+                }, "out", "/ev", "\n", "ev", "str", "^Time passes...", "/str", "/ev", {
+                    "*": ".^.c-0",
+                    "flg": 20
+                }, {
+                    "c-0": ["\n", "ev", {
+                        "VAR?": "Adams"
+                    }, {
+                        "f()": "doctorLeaves"
+                    }, "out", "/ev", "^ ", "ev", {
+                        "VAR?": "Cartwright"
+                    }, {
+                        "f()": "doctorEnters"
+                    }, "out", "/ev", "^ ", "ev", {
+                        "VAR?": "Eamonn"
+                    }, {
+                        "f()": "doctorEnters"
+                    }, "out", "/ev", "\n", "ev", {
+                        "f()": "whos_in_today"
+                    }, "out", "/ev", "\n", "end", {
+                        "#f": 5
+                    }]
+                }], {
+                    "#f": 1
+                }
+            ],
+            "global decl": ["ev", {
+                "list": {
+                    "DoctorsInSurgery.Adams": 1,
+                    "DoctorsInSurgery.Denver": 4
+                }
+            }, {
+                "VAR=": "DoctorsInSurgery"
+            }, "/ev", "end", null],
+            "#f": 1
+        }
+    ],
+    "listDefs": {
+        "DoctorsInSurgery": {
+            "Adams": 1,
+            "Bernard": 2,
+            "Cartwright": 3,
+            "Denver": 4,
+            "Eamonn": 5
+        }
+    }
+}
