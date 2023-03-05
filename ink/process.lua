@@ -136,8 +136,9 @@ local function make_paragraph(output)
 	output.tags = {}
 end
 
-local EXIT = 1
-local FUNCTION_RET = 2
+local END = 1
+local DONE = 2
+local FUNCTION_RET = 3
 
 local function run(container, output, context, from, stack)
 	container.visit(from)
@@ -160,12 +161,14 @@ local function run(container, output, context, from, stack)
 				end
 
 			elseif item == "done" then
-				break
+				return DONE
+				
 			elseif item == "end" then
 				if  #output.text > 0 then
 					make_paragraph(output)
 				end
-				break
+				return END
+				
 			elseif item == "ev" then --  start evaluation mode, objects are added to an evaluation stack
 				--
 			elseif item == "/ev" then 
@@ -314,7 +317,7 @@ local function run(container, output, context, from, stack)
 			elseif item == "void" then
 				table.insert(stack, "")
 			elseif item == "->->" then
-				break
+				return DONE
 			elseif item == "~ret" then
 				return FUNCTION_RET
 			elseif item == "thread" then --thread
@@ -377,7 +380,10 @@ local function run(container, output, context, from, stack)
 			elseif item["->"] then --divert
 				if (item["c"] == nil) or (item["c"] and pop(stack)) then --checking condition
 					local path = item["var"] and get_variable(context, container, item["->"]) or item["->"]
-					run(find(path, container), output, context,  container.name, stack)
+					local result = run(find(path, container), output, context,  container.name, stack)
+					if result == END then
+						return END
+					end
 				end
 
 			elseif item["^->"] then --variable divert target -- only in stack?
@@ -442,12 +448,10 @@ local function run(container, output, context, from, stack)
 		end
 
 		if container.is_end() then		
-			break
+			return DONE
 			
 		end
 	end
-
-	return EXIT
 end
 
 
