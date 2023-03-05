@@ -9,10 +9,16 @@ M.create = function(s)
 		__globals = {}, 
 		__root = {},
 		__lists = {},
-		__observers = {}
+		__observers = {},
+		__randoms = {} -- to restore session with the same random values
 	}
 
 	math.randomseed(os.time())
+
+	local state = { -- track user input and random values to save\load story
+		answers = {}, 
+		randoms = context["__randoms"]
+	}
 	
 	local data
 	local status, err = pcall(function()
@@ -34,6 +40,7 @@ M.create = function(s)
 		data = data or root
 		
 		if #choices > 0 then
+			table.insert(state.answers, answer)
 			assert(type(answer) == "number" and answer > 0 and answer <= #choices, "answer required")
 			data = choices[answer]
 		end
@@ -125,29 +132,54 @@ M.create = function(s)
 		assert(false, "not implemeted")
 	end
 
-	story.load = function(state)
-		assert(false, "not implemeted")
-	end
+	story.load = function(saved)
+		local observers = context["__observers"]
+		context = {
+			__globals = {}, 
+			__root = {},
+			__lists = context["__lists"],
+			__observers = {},
+			__randoms = {unpack(saved.randoms)},
+			__restore_mode = true
+		}
+		story.variables = context["__globals"]
 
-	story.save = function()
-		local state = {context = {}}
-		for key, value in pairs(context) do
-			if key ~= "__observers" and  key ~= "__lists" then
-				state.context[key] = value
+		choices = {}
+		process = Process.create(context)
+		root = Container.create(data.root)
+
+		if root.attributes["global decl"] then --init global variables
+			story.continue(0, root.attributes["global decl"])
+		end
+
+		local paragraphs, answers = story.continue()
+
+		for _, answer in ipairs(saved.answers) do
+			paragraphs, answers = story.continue(answer)
+		end
+
+		state = {
+			answers = {unpack(saved.answers)},
+			randoms = {unpack(saved.randoms)}
+		}
+
+		context["__randoms"] = state.randoms
+		context["__restore_mode"] = nil
+		context["__observers"] = observers
+		for name, functions in pairs(observers) do
+			for _, f in ipairs(functions) do
+				f(story.variables[name])
 			end
 		end
 
-		state.root = root.get_state()
+		return paragraphs, answers
+	end
 
-		state.choices = {}
-		for _, choice in ipairs(choices) do
-			table.insert(state.choices, {
-				path = choice.path,
-				name = choice.container.name
-			})
-		end
-		
-		return state
+	story.save = function()
+		return {
+			answers = {unpack(state.answers)},
+			randoms = {unpack(state.randoms)}
+		}
 	end
 
 	story.eval = function(expression)

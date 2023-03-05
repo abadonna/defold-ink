@@ -99,22 +99,6 @@ M.create = function(data, parent, name)
 		end
 	end
 
-	container.get_state = function()
-		local state = {
-			index = container.index,
-			visits = container.visits,
-			children = {}
-		}
-
-		for i, item in ipairs(container.content) do
-			if type(item) == "table" and item.is_container then
-				state.children[i] = item.get_state()
-			end
-		end
-
-		return state
-	end
-
 	return container
 end
 

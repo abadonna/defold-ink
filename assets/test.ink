@@ -4,6 +4,8 @@ Once upon a time...
 
 -(back)
 
+{RANDOM(1,100)} - {RANDOM(1,100)} - {RANDOM(1,100)}
+
 function <>
 result: {sum(2,3)}
 
@@ -13,10 +15,13 @@ result: {sum(2,3)}
  * There were four lines of content.
 
 - They lived happily ever after.
+{~AA|BB|ZZ|XX|QQ}
     -> END
 
 ===test
 ->test2->
+
+
 tunneled text
 * [tunnel option1]
 -

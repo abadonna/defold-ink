@@ -184,12 +184,23 @@ local function run(container, output, context, from, stack)
 
 			elseif item == "seq" then
 				local value = math.random(0, pop(stack)-1)
+				if context["__restore_mode"] then
+					value = pop(context["__randoms"])
+				else
+					table.insert(context["__randoms"], 1, value)
+				end
 				table.insert(stack, value)
 
 			elseif item == "rnd" then
 				local v2 = pop(stack)
 				local v1 = pop(stack)
-				table.insert(stack, math.random(v1, v2))
+				local value = math.random(v1, v2)
+				if context["__restore_mode"] then
+					value = pop(context["__randoms"])
+				else
+					table.insert(context["__randoms"], 1, value)
+				end
+				table.insert(stack, value)
 				
 			elseif item == "out" then
 				local value = pop(stack)
