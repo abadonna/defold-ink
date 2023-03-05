@@ -336,7 +336,7 @@ local function run(container, output, context, from, stack)
 
 		elseif type(item) == "table" then
 			if item.is_container then -- inner container, go down hierachy
-				item.index = 1
+				--item.index = 1
 				run(item, output, context, container.name, stack)
 
 			elseif item["*"] then --choice point
@@ -380,10 +380,7 @@ local function run(container, output, context, from, stack)
 			elseif item["->"] then --divert
 				if (item["c"] == nil) or (item["c"] and pop(stack)) then --checking condition
 					local path = item["var"] and get_variable(context, container, item["->"]) or item["->"]
-					local result = run(find(path, container), output, context,  container.name, stack)
-					if result == END then
-						return END
-					end
+					return run(find(path, container), output, context,  container.name, stack)
 				end
 
 			elseif item["^->"] then --variable divert target -- only in stack?
@@ -447,8 +444,12 @@ local function run(container, output, context, from, stack)
 			end
 		end
 
-		if container.is_end() then		
-			return DONE
+		if container.is_end() then
+			if container.parent then
+				container = container.parent
+			else
+				return DONE
+			end
 			
 		end
 	end
