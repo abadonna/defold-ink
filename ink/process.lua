@@ -126,6 +126,16 @@ local function find_tags_in_path(path, parent)
 	return tags
 end
 
+local function make_paragraph(output)
+	local p = {text = table.concat(output.text), tags = output.tags}
+	p.text = p.text:gsub("^%s*(.-)%s*$", "%1") --trim
+	if string.len(p.text) > 0 then --skip empty strings
+		table.insert(output.paragraphs, p)
+	end
+	output.text = {}
+	output.tags = {}
+end
+
 local EXIT = 1
 local FUNCTION_RET = 2
 
@@ -138,11 +148,7 @@ local function run(container, output, context, from, stack)
 		if type(item) == "string" then
 			if item == "\n" then
 				if #output.text > 0 and not context["__glue_mode"] then
-					local p = {text = table.concat(output.text), tags = output.tags}
-					p.text = p.text:gsub("^%s*(.-)%s*$", "%1") --trim
-					table.insert(output.paragraphs, p)
-					output.text = {}
-					output.tags = {}
+					make_paragraph(output)
 				end
 
 			elseif item:sub(1, 1) == "^" then --string value
@@ -157,10 +163,7 @@ local function run(container, output, context, from, stack)
 				break
 			elseif item == "end" then
 				if  #output.text > 0 then
-					local p = {text = table.concat(output.text), tags = output.tags}
-					table.insert(output.paragraphs, p)
-					output.text = {}
-					output.tags = {}
+					make_paragraph(output)
 				end
 				break
 			elseif item == "ev" then --  start evaluation mode, objects are added to an evaluation stack
@@ -479,6 +482,5 @@ M.create = function(context)
 	end
 	return process
 end
-
 
 return M
