@@ -337,7 +337,7 @@ local function run(container, output, context, from, stack)
 		elseif type(item) == "table" then
 			if item.is_container then -- inner container, go down hierachy
 				item.index = 1
-				run(item, output, context, container.name, stack)
+				return run(item, output, context, container.name, stack)
 
 			elseif item["*"] then --choice point
 				local choice = {
