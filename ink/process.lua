@@ -24,7 +24,7 @@ local function get_variable(context, container, name)
 	if value ~= nil then return value end
 
 	--check if temp variable
-	value = context[container.stitch] and context[container.stitch][name] or nil
+	value = context[container.stitch] and context[container.stitch][name]
 	if value ~= nil then return value end
 
 	value = context["__root"][name] -- temp without stitch
@@ -50,6 +50,8 @@ local function get_variable(context, container, name)
 			end
 		end
 	end
+
+	assert(false, "Variable not found " .. name .. " in stitch " .. container.stitch)
 	return nil
 end
 
@@ -494,8 +496,8 @@ M.create = function(context)
 			local ok, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
-
 	end
+	
 	return process
 end
 
