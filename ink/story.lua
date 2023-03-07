@@ -10,13 +10,14 @@ M.create = function(s)
 		__root = {},
 		__lists = {},
 		__observers = {},
+		__external = {},
 		__randoms = {} -- to restore session with the same random values
 	}
 
 	math.randomseed(os.time())
 
 	local state = { -- track user input and random values to save\load story
-		answers = {}, 
+		input = {}, 
 		randoms = context["__randoms"]
 	}
 	
@@ -40,7 +41,7 @@ M.create = function(s)
 		data = data or root
 		
 		if #choices > 0 then
-			table.insert(state.answers, answer)
+			table.insert(state.input, answer)
 			assert(type(answer) == "number" and answer > 0 and answer <= #choices, "answer required")
 			data = choices[answer]
 		end
@@ -122,10 +123,11 @@ M.create = function(s)
 				f(context["__globals"][name])
 			end
 		end
+		table.insert(state.input, {name = name, value = value})
 	end
 
 	story.bind = function(name, f)
-		assert(false, "not implemeted")
+		context["__external"][name] = f
 	end
 
 	story.jump = function(path)
@@ -138,6 +140,7 @@ M.create = function(s)
 			__globals = {}, 
 			__root = {},
 			__lists = context["__lists"],
+			__external = context["__external"],
 			__observers = {},
 			__randoms = {unpack(saved.randoms)},
 			__restore_mode = true
@@ -154,12 +157,16 @@ M.create = function(s)
 
 		local paragraphs, answers = story.continue()
 
-		for _, answer in ipairs(saved.answers) do
-			paragraphs, answers = story.continue(answer)
+		for _, input in ipairs(saved.input) do
+			if type(input) == "table" then --manual change of variable
+				context["__globals"][input.name] = input.value
+			else
+				paragraphs, answers = story.continue(input)
+			end
 		end
 
 		state = {
-			answers = {unpack(saved.answers)},
+			input = {unpack(saved.input)},
 			randoms = {unpack(saved.randoms)}
 		}
 
@@ -177,7 +184,7 @@ M.create = function(s)
 
 	story.save = function()
 		return {
-			answers = {unpack(state.answers)},
+			input = {unpack(state.input)},
 			randoms = {unpack(state.randoms)}
 		}
 	end

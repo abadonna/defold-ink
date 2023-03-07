@@ -440,8 +440,23 @@ local function run(container, output, context, from, stack)
 				end
 
 			elseif item["f()"] then --function
-				if FUNCTION_RET ~= run(find(item["f()"], container), output, context, container.name, stack) then
-					table.insert(stack, "") --if no return in function we miss void on stack
+				local fname = item["f()"]
+				local fcontainer = find(fname, container)
+				if context["__external"][fname] ~= nil then --external function binded
+					local args = {}
+					for _, param in ipairs(fcontainer.content) do
+						if type(param) == "table" and param["temp="] then
+							table.insert(args, 1, pop(stack))
+						else
+							break
+						end
+					end
+					local res = context["__external"][fname](unpack(args)) or ""
+					table.insert(stack, res)
+				else
+					if FUNCTION_RET ~= run(fcontainer, output, context, container.name, stack) then
+						table.insert(stack, "") --if no return in function we miss void on stack
+					end
 				end
 				glue_paragraph(output) -- ??? not sure
 
