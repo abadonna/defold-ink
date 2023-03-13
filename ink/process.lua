@@ -240,6 +240,16 @@ local function run(container, output, context, from, stack)
 			elseif item == "MAX" then
 				table.insert(stack, math.max(pop(stack), pop(stack)))
 
+			elseif item == "INT" then
+				local value = pop(stack)
+				table.insert(stack, value >= 0 and math.floor(value) or math.ceil(value))
+
+			elseif item == "FLOOR" then
+				table.insert(stack, math.floor(pop(stack)))
+
+			elseif item == "FLOAT" then
+				table.insert(stack, tonumber(pop(stack)))
+
 			elseif item == "+" then
 				local v1 = pop(stack)
 				local v2 = pop(stack)
@@ -512,6 +522,7 @@ M.create = function(context)
 			process.completed = check == nil
 		end
 	end
+
 	
 	return process
 end
