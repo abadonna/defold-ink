@@ -33,46 +33,51 @@ M.create = function(s)
 	local story = {variables = context["__globals"]}
 
 	local root = Container.create(data.root)
-	local choices = {}
+	local flows = {}
 
-	local process = Process.create(context)
+	local flow = {
+		choices = {},
+		process = Process.create(context)
+	}
+
+	flows["__default"] = flow
 	
 	story.continue = function(answer, data)
 		data = data or root
 		
-		if #choices > 0 then
+		if #flow.choices > 0 then
 			table.insert(state.input, answer)
-			assert(type(answer) == "number" and answer > 0 and answer <= #choices, "answer required")
-			data = choices[answer]
+			assert(type(answer) == "number" and answer > 0 and answer <= #flow.choices, "answer required")
+			data = flow.choices[answer]
 		end
 		
-		choices = {}
+		flow.choices = {}
 
 		local output = {
 			tags = {},
 			text = {},
 			paragraphs = {},
-			choices = choices
+			choices = flow.choices
 		}
 
-		process.run(data, output)
+		flow.process.run(data, output)
 
 		local answers = {}
 		local paragraphs = output.paragraphs
 	
-		if #choices == 1 and choices[1].fallback then
+		if #flow.choices == 1 and flow.choices[1].fallback then
 			paragraphs, answers = story.continue(1)
 			for i, p in ipairs(output.paragraphs) do
 				table.insert(paragraphs, i, p)
 			end
 			
-		elseif #choices > 0 then
-			if choices[1].fallback then
-				table.remove(choices, 1)
+		elseif #flow.choices > 0 then
+			if flow.choices[1].fallback then
+				table.remove(flow.choices, 1)
 			end
-			for i, choice in ipairs(choices) do
+			for i, choice in ipairs(flow.choices) do
 				if choice.fallback then
-					table.remove(choices, i)
+					table.remove(flow.choices, i)
 				else
 					table.insert(answers, {text = choice.text, tags = choice.tags})
 				end
@@ -131,7 +136,20 @@ M.create = function(s)
 	end
 
 	story.jump = function(path)
-		assert(false, "not implemeted")
+		flow.choices = {}
+		return story.continue(0, {path = path, container = root})
+	end
+
+	story.switch_flow = function(name)
+		flow = flows[name or "__default"]
+		
+		if flow == nil then
+			flow = {
+				choices = {},
+				process = Process.create(context)
+			}
+			flows[name] = flow
+		end
 	end
 
 	story.load = function(saved)
@@ -147,7 +165,7 @@ M.create = function(s)
 		}
 		story.variables = context["__globals"]
 
-		choices = {}
+		flow.choices = {}
 		process = Process.create(context)
 		root = Container.create(data.root)
 
