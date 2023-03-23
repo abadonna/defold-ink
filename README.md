@@ -92,7 +92,7 @@ local paragraphs, choices = story.load(state)
 ### story.variables
 Just a table of all global variables you can read and set. Use **story.assign_value(name, value)** to notify observer functions about the change.
 
-##Multiple parallel flows
+## Multiple parallel flows
 It is possible to have multiple parallel "flows" - please read [this](https://github.com/inkle/ink/blob/master/Documentation/RunningYourInk.md#multiple-parallel-flows-beta) for more details.
 
 ### story.switch_flow(name)
