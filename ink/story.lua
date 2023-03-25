@@ -215,7 +215,7 @@ M.create = function(s)
 			expression = expression:gsub("^".. name .. "([^%w_])", tostring(value) .. "%1")
 		end
 
-		return load("return " .. expression)()
+		return loadstring("return " .. expression)()
 	end
 	
 	return story
