@@ -49,12 +49,12 @@ local function get_variable(context, container, name)
 		end
 	end
 
-	assert(false, "Variable not found " .. name .. " in stitch " .. container.stitch)
+	erorr("Variable not found " .. name .. " in stitch " .. container.stitch)
 	return nil
 end
 
 local function pop(stack)
-	assert(#stack > 0, "empty stack!")
+	assert(#stack > 0, "Empty stack!")
 	local item = stack[#stack]
 	table.remove(stack, #stack)
 	return item
@@ -346,7 +346,7 @@ local function run(container, output, context, from, stack)
 				item = container.next()
 				run(find(item["->"], container), output, context, container.name, stack)
 			else
-				assert(false, "unkown command " .. item)
+				error("Unkown command " .. item)
 			end
 
 		elseif type(item) == "number" then
@@ -476,7 +476,7 @@ local function run(container, output, context, from, stack)
 				for key,_ in pairs(item) do
 					error = error .. key .. " "
 				end
-				assert(false, "unkown object " .. error)
+				error("Unkown object " .. error)
 			end
 		end
 

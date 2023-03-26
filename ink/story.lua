@@ -48,7 +48,7 @@ M.create = function(s)
 		
 		if #flow.choices > 0 then
 			table.insert(state.input, answer)
-			assert(type(answer) == "number" and answer > 0 and answer <= #flow.choices, "answer required")
+			assert(type(answer) == "number" and answer > 0 and answer <= #flow.choices, "Answer required.")
 			data = flow.choices[answer]
 		end
 		
@@ -155,7 +155,7 @@ M.create = function(s)
 		table.insert(state.input, {flow = flow})
 	end
 
-	story.load = function(history)
+	story.restore = function(history)
 		local observers = context["__observers"]
 		context = {
 			__globals = {}, 
@@ -188,7 +188,16 @@ M.create = function(s)
 					context["__globals"][input.name] = input.value
 				end
 			else
-				paragraphs, answers = story.continue(input)
+				--TODO: we can't just rely on answer index if story data has changed. 
+				--So maybe some fuzzy logic can be applied here to compare answer text
+				--But it means we have to save it as well
+				local status, err = pcall(function ()
+					paragraphs, answers = story.continue(input)
+				end)
+				if not status then --saved state and story are not compatible
+					pprint(err)
+					error("Can't restore story, incompatible data?")
+				end
 			end
 		end
 
@@ -209,7 +218,7 @@ M.create = function(s)
 		return paragraphs, answers
 	end
 
-	story.save = function()
+	story.get_state = function()
 		return {
 			input = Utils.clone(state.input),
 			randoms = Utils.clone(state.randoms)
