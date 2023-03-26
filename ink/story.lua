@@ -1,13 +1,14 @@
 local Container = require "ink.container"
 local Process = require "ink.process"
 local List = require "ink.list"
+local Utils = require "ink.utils"
 
 local M = {}
 
 M.create = function(s)
 	local context = {
 		__globals = {}, 
-		__root = {},
+		__temp = {__root = {}},
 		__lists = {},
 		__observers = {},
 		__external = {},
@@ -137,6 +138,7 @@ M.create = function(s)
 
 	story.jump = function(path)
 		flow.choices = {}
+		table.insert(state.input, {jump = path})
 		return story.continue(0, {path = path, container = root})
 	end
 
@@ -150,18 +152,19 @@ M.create = function(s)
 			}
 			flows[name] = flow
 		end
+		table.insert(state.input, {flow = flow})
 	end
 
-	story.load = function(saved)
+	story.load = function(history)
 		local observers = context["__observers"]
 		context = {
 			__globals = {}, 
-			__root = {},
+			__temp = {__root = {}},
 			__lists = context["__lists"],
 			__external = context["__external"],
 			__observers = {},
-			__randoms = {unpack(saved.randoms)},
-			__restore_mode = true
+			__randoms = Utils.clone(history.randoms),
+			__replay_mode = true
 		}
 		story.variables = context["__globals"]
 
@@ -175,21 +178,27 @@ M.create = function(s)
 
 		local paragraphs, answers = story.continue()
 
-		for _, input in ipairs(saved.input) do
-			if type(input) == "table" then --manual change of variable
-				context["__globals"][input.name] = input.value
+		for _, input in ipairs(history.input) do
+			if type(input) == "table" then 
+				if input.flow then
+					story.switch_flow(input.flow)
+				elseif input.jump then
+					story.jump(input.jump)
+				else --manual change of variable
+					context["__globals"][input.name] = input.value
+				end
 			else
 				paragraphs, answers = story.continue(input)
 			end
 		end
 
 		state = {
-			input = {unpack(saved.input)},
-			randoms = {unpack(saved.randoms)}
+			input = Utils.clone(history.input),
+			randoms = Utils.clone(history.randoms)
 		}
 
 		context["__randoms"] = state.randoms
-		context["__restore_mode"] = nil
+		context["__replay_mode"] = nil
 		context["__observers"] = observers
 		for name, functions in pairs(observers) do
 			for _, f in ipairs(functions) do
@@ -202,8 +211,8 @@ M.create = function(s)
 
 	story.save = function()
 		return {
-			input = {unpack(state.input)},
-			randoms = {unpack(state.randoms)}
+			input = Utils.clone(state.input),
+			randoms = Utils.clone(state.randoms)
 		}
 	end
 

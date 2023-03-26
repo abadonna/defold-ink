@@ -1,9 +1,7 @@
 local List = require "ink.list"
-local M = {}
+local Utils = require "ink.utils"
 
-local function testflag(value, flag)
-	return bit.band(value, flag) == flag
-end
+local M = {}
 
 local function split(s, sep)
 	if sep == nil then
@@ -24,10 +22,10 @@ local function get_variable(context, container, name)
 	if value ~= nil then return value end
 
 	--check if temp variable
-	value = context[container.stitch] and context[container.stitch][name]
+	value = context["__temp"][container.stitch] and context["__temp"][container.stitch][name]
 	if value ~= nil then return value end
 
-	value = context["__root"][name] -- temp without stitch
+	value = context["__temp"]["__root"][name] -- temp without stitch
 	if value ~= nil then return value end
 
 	-- check if list item
@@ -186,7 +184,7 @@ local function run(container, output, context, from, stack)
 
 			elseif item == "seq" then
 				local value = math.random(0, pop(stack)-1)
-				if context["__restore_mode"] then
+				if context["__replay_mode"] then
 					value = pop(context["__randoms"])
 				else
 					table.insert(context["__randoms"], 1, value)
@@ -197,7 +195,7 @@ local function run(container, output, context, from, stack)
 				local v2 = pop(stack)
 				local v1 = pop(stack)
 				local value = math.random(v1, v2)
-				if context["__restore_mode"] then
+				if context["__replay_mode"] then
 					value = pop(context["__randoms"])
 				else
 					table.insert(context["__randoms"], 1, value)
@@ -372,22 +370,22 @@ local function run(container, output, context, from, stack)
 				
 				local flags = item["flg"]
 				local valid = true
-				if testflag(flags, 0x1) then -- check condition
+				if Utils.testflag(flags, 0x1) then -- check condition
 					valid = pop(stack)
 				end
 
-				if testflag(flags, 0x4) then -- read choice-only content
+				if Utils.testflag(flags, 0x4) then -- read choice-only content
 					choice.text = pop(stack)
 				end
 				
-				if testflag(flags, 0x2) then -- read start content
+				if Utils.testflag(flags, 0x2) then -- read start content
 					choice.text = pop(stack) .. choice.text
 				end
 				
-				if valid and testflag(flags, 0x10) then --once only
+				if valid and Utils.testflag(flags, 0x10) then --once only
 					valid = find(choice.path, container, true).visits == 0
 				end
-				if valid and testflag(flags, 0x8) then --is fallback
+				if valid and Utils.testflag(flags, 0x8) then --is fallback
 					valid = #output.choices == 0
 					choice.fallback = true
 				end
@@ -421,18 +419,18 @@ local function run(container, output, context, from, stack)
 							f(context["__globals"][name])
 						end
 					end
-				elseif context[container.stitch] and context[container.stitch][name] ~= nil then
-					context[container.stitch][name] = pop(stack)
+				elseif context["__temp"][container.stitch] and context["__temp"][container.stitch][name] ~= nil then
+					context["__temp"][container.stitch][name] = pop(stack)
 				else
-					context["__root"][name] = pop(stack)
+					context["__temp"]["__root"][name] = pop(stack)
 				end
 
 			elseif item["temp="] then --temp variable assignment
 				local name = item["temp="]
-				if context[container.stitch] == nil then
-					context[container.stitch] = {}
+				if context["__temp"][container.stitch] == nil then
+					context["__temp"][container.stitch] = {}
 				end
-				context[container.stitch][name] = pop(stack)
+				context["__temp"][container.stitch][name] = pop(stack)
 
 			elseif item["CNT?"] then --visits count
 				local target = find(item["CNT?"], container, true)

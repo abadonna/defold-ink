@@ -1,20 +1,5 @@
 local M = {}
-
-local function testflag(value, flag)
-	return bit.band(value, flag) == flag
-end
-
-local function clone(obj)
-	local copy = {}
-	for key, value in pairs(obj) do
-		if type(value) == "table" then
-			copy[key] = clone(value)
-		else
-			copy[key] = value
-		end
-	end
-	return copy
-end
+local Utils = require "ink.utils"
 
 M.create = function(data, parent, name)
 	local container = {
@@ -60,7 +45,7 @@ M.create = function(data, parent, name)
 		return container
 	end
 
-	data = clone(data)
+	data = Utils.clone(data)
 
 	--read attributes first
 	local attrs = data[#data]
@@ -72,8 +57,8 @@ M.create = function(data, parent, name)
 		end
 
 		if attrs["#f"] then --read container's flags
-			keep_visits = testflag(attrs["#f"], 0x1)
-			count_start_only = testflag(attrs["#f"], 0x4) 
+			keep_visits = Utils.testflag(attrs["#f"], 0x1)
+			count_start_only = Utils.testflag(attrs["#f"], 0x4) 
 			
 			if parent and keep_visits and not count_start_only then
 				container.stitch = container.name
@@ -102,6 +87,20 @@ M.create = function(data, parent, name)
 	return container
 end
 
+--[[
+M.serialize = function(container, output)
+	output[container.name] = {index = container.index, visits = container.visits}
+	for _, child in pairs(container.attributes) do
+		if type(child) == "table" and child.is_container then
+			M.serialize(child, output)
+		end
+	end
+	for _, child in ipairs(container.content) do
+		if type(child) == "table" and child.is_container then
+			M.serialize(child, output)
+		end
+	end
+end --]]
 
 
 return M
