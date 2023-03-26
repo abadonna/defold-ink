@@ -37,6 +37,7 @@ M.create = function(s)
 	local flows = {}
 
 	local flow = {
+		name = "__default",
 		choices = {},
 		process = Process.create(context)
 	}
@@ -143,16 +144,19 @@ M.create = function(s)
 	end
 
 	story.switch_flow = function(name)
-		flow = flows[name or "__default"]
+		name = name or "__default"
+		if flow.name == name then return end
+		flow = flows[name]
 		
 		if flow == nil then
 			flow = {
+				name = name,
 				choices = {},
 				process = Process.create(context)
 			}
 			flows[name] = flow
 		end
-		table.insert(state.input, {flow = flow})
+		table.insert(state.input, {flow = flow.name})
 	end
 
 	story.restore = function(history)
@@ -169,6 +173,7 @@ M.create = function(s)
 		story.variables = context["__globals"]
 
 		flow = {
+			name = "__default",
 			choices = {},
 			process = Process.create(context)
 		}
