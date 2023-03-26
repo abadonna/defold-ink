@@ -168,8 +168,12 @@ M.create = function(s)
 		}
 		story.variables = context["__globals"]
 
-		flow.choices = {}
-		process = Process.create(context)
+		flow = {
+			choices = {},
+			process = Process.create(context)
+		}
+
+		flows = {__default = flow}
 		root = Container.create(data.root)
 
 		if root.attributes["global decl"] then --init global variables
