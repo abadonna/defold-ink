@@ -131,9 +131,9 @@ local function make_paragraph(output)
 	p.text = p.text:gsub("^%s*(.-)%s*$", "%1") --trim
 	if string.len(p.text) > 0 then --skip empty strings
 		table.insert(output.paragraphs, p)
+		output.tags = {}
 	end
 	output.text = {}
-	output.tags = {}
 end
 
 local END = 1
