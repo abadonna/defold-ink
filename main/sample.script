@@ -5,8 +5,12 @@ function init(self)
 	local res = sys.load_resource("/assets/test.json")
 	local story = ink.create(res)
 
-	--local filename = sys.get_save_file("inktest", "story")
-	--sys.save(filename, story.save())
+	local filename = sys.get_save_file("inktest", "story")
+
+	--sys.save(filename, story.get_state())
+	
+	--local restored = sys.load(filename)
+	--story.restore(restored)
 
 	repeat
 		pprint("======================")
@@ -22,6 +26,7 @@ function init(self)
 			end
 		end
 	until #answers == 0 
+	
 
 	pprint("- T H E - E N D -")
 	os.exit(0)

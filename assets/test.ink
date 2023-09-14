@@ -1,4 +1,11 @@
-Once upon a time...
+
+VAR yy = 1
+
+~ raise(yy)
+
+
+Once upon a time... {yy}
+
 
 ->check_param ("test param")
 
@@ -41,3 +48,8 @@ calculating...
 * tunnel option2
 -
 ->->
+
+ === function raise(ref x)
+ 	~ x = x + 1
+ 	
+ 	

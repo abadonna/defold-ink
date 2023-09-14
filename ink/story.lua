@@ -48,7 +48,7 @@ M.create = function(s)
 		data = data or root
 		
 		if #flow.choices > 0 then
-			table.insert(state.input, answer)
+			table.insert(state.input, {index = answer, text = flow.choices[answer].text})
 			assert(type(answer) == "number" and answer > 0 and answer <= #flow.choices, "Answer required.")
 			data = flow.choices[answer]
 		end
@@ -181,6 +181,7 @@ M.create = function(s)
 		flows = {__default = flow}
 		root = Container.create(data.root)
 
+
 		if root.attributes["global decl"] then --init global variables
 			story.continue(0, root.attributes["global decl"])
 		end
@@ -193,13 +194,30 @@ M.create = function(s)
 					story.switch_flow(input.flow)
 				elseif input.jump then
 					story.jump(input.jump)
-				else --manual change of variable
+				elseif input.name then --manual change of variable
 					context["__globals"][input.name] = input.value
+				else
+					if flow.choices[input.index].text == input.text then
+						-- all is good!
+						paragraphs, answers = story.continue(input.index)
+					else
+						--story data has changed, we can't just rely on answer index
+						--checking text as well (TODO: fuzzy logic?)
+						local is_found = false
+						for i, choice in ipairs(flow.choices) do
+							if choice.text == input.text then
+								paragraphs, answers = story.continue(i)
+								is_found = true
+								break
+							end
+						end
+						if not is_found then
+							pprint("'".. input.text .. "' choice is not found.")
+							error("Can't restore story, incompatible data?")
+						end
+					end
 				end
-			else
-				--TODO: we can't just rely on answer index if story data has changed. 
-				--So maybe some fuzzy logic can be applied here to compare answer text
-				--But it means we have to save it as well
+			else --obsolete, for compatibility only
 				local status, err = pcall(function ()
 					paragraphs, answers = story.continue(input)
 				end)

@@ -17,18 +17,52 @@ local function split(s, sep)
 	return res 
 end
 
+local function get_variable_ref(context, container, name)
+	if context["__globals"][name] then 
+		return {
+			get = function() return context["__globals"][name] end,
+			set = function(v) context["__globals"][name] = v end
+		}
+	end
+
+	if context["__temp"][container.stitch] and context["__temp"][container.stitch][name] then
+		return {
+			get = function() return context["__temp"][container.stitch][name] end,
+			set = function(v) context["__temp"][container.stitch][name] = v end
+		}
+	end
+	
+	if context["__temp"]["__root"][name] then
+		return {
+			get = function() return context["__temp"]["__root"][name] end,
+			set = function(v) context["__temp"]["__root"][name] = v end
+		}
+	end
+
+	error("No variable " .. name .. " reference found!")
+end
+
+local function get_value(variable)
+	if type(variable) == "table" then
+		return variable.get()
+	end
+
+	return variable
+end
+
 local function get_variable(context, container, name)
-	local value = context["__globals"][name] 
-	if value ~= nil then return value end
+	local variable = context["__globals"][name] 
+	if variable then return get_value(variable) end
 
 	--check if temp variable
-	value = context["__temp"][container.stitch] and context["__temp"][container.stitch][name]
-	if value ~= nil then return value end
+	variable = context["__temp"][container.stitch] and context["__temp"][container.stitch][name]
+	if variable then return get_value(variable) end
 
-	value = context["__temp"]["__root"][name] -- temp without stitch
-	if value ~= nil then return value end
+	variable = context["__temp"]["__root"][name] -- temp without stitch
+	if variable then return get_value(variable) end
 
 	-- check if list item
+	local value = nil
 	local parts = split(name, ".") 
 	if #parts == 2 then
 		local list = context["__lists"][parts[1]]
@@ -410,6 +444,9 @@ local function run(container, output, context, from, stack)
 			elseif item["VAR?"] then --variable
 				table.insert(stack, get_variable(context, container, item["VAR?"]))
 
+			elseif item["^var"] then --variable ref 
+				table.insert(stack, get_variable_ref(context, container, item["^var"]))
+
 			elseif item["VAR="] then --variable assignment
 				local name = item["VAR="]
 				if not item["re"] or context["__globals"][name] ~= nil then
@@ -430,7 +467,12 @@ local function run(container, output, context, from, stack)
 				if context["__temp"][container.stitch] == nil then
 					context["__temp"][container.stitch] = {}
 				end
-				context["__temp"][container.stitch][name] = pop(stack)
+				if item["re"] and type(context["__temp"][container.stitch][name]) == "table" then
+					--reference!
+					context["__temp"][container.stitch][name].set(pop(stack))
+				else
+					context["__temp"][container.stitch][name] = pop(stack)
+				end
 
 			elseif item["CNT?"] then --visits count
 				local target = find(item["CNT?"], container, true)
@@ -472,11 +514,11 @@ local function run(container, output, context, from, stack)
 				table.insert(stack, item["list"])
 
 			else
-				local error = ""
+				local err = ""
 				for key,_ in pairs(item) do
-					error = error .. key .. " "
+					err = err .. key .. " "
 				end
-				error("Unkown object " .. error)
+				error("Unkown object " .. err)
 			end
 		end
 
@@ -519,6 +561,7 @@ M.create = function(context)
 			local ok, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
+		
 	end
 
 	
