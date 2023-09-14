@@ -18,21 +18,21 @@ local function split(s, sep)
 end
 
 local function get_variable_ref(context, container, name)
-	if context["__globals"][name] then 
+	if context["__globals"][name] ~= nil then 
 		return {
 			get = function() return context["__globals"][name] end,
 			set = function(v) context["__globals"][name] = v end
 		}
 	end
 
-	if context["__temp"][container.stitch] and context["__temp"][container.stitch][name] then
+	if context["__temp"][container.stitch] and context["__temp"][container.stitch][name] ~= nil then
 		return {
 			get = function() return context["__temp"][container.stitch][name] end,
 			set = function(v) context["__temp"][container.stitch][name] = v end
 		}
 	end
 	
-	if context["__temp"]["__root"][name] then
+	if context["__temp"]["__root"][name] ~= nil then
 		return {
 			get = function() return context["__temp"]["__root"][name] end,
 			set = function(v) context["__temp"]["__root"][name] = v end
@@ -52,14 +52,14 @@ end
 
 local function get_variable(context, container, name)
 	local variable = context["__globals"][name] 
-	if variable then return get_value(variable) end
+	if variable ~= nil then return get_value(variable) end
 
 	--check if temp variable
 	variable = context["__temp"][container.stitch] and context["__temp"][container.stitch][name]
-	if variable then return get_value(variable) end
+	if variable ~= nil then return get_value(variable) end
 
 	variable = context["__temp"]["__root"][name] -- temp without stitch
-	if variable then return get_value(variable) end
+	if variable ~= nil then return get_value(variable) end
 
 	-- check if list item
 	local value = nil
@@ -83,7 +83,7 @@ local function get_variable(context, container, name)
 		end
 	end
 
-	erorr("Variable not found " .. name .. " in stitch " .. container.stitch)
+	error("Variable not found " .. name .. " in stitch " .. container.stitch)
 	return nil
 end
 
