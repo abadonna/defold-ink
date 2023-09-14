@@ -38,6 +38,8 @@ https://github.com/abadonna/defold-ink/archive/master.zip
 
 Then you can require the ```ink.story``` module.
 
+Alternatively - try this [defold project template](https://github.com/abadonna/text-adventure-template) that provides a good start for creating game with Ink and Defold.
+
 ## Documentation
 ### create(json)
 Parses the Ink json string and returns a story instance. Make sure it's UTF8!
