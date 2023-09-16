@@ -152,6 +152,8 @@ local function find_tags_in_path(path, parent)
 	local container = find(path, parent, true)
 	for i, item in ipairs(container.content) do
 		if type(item) == "table" and item["#"] then
+			item["choice"] = true -- mark this tag as "choice tag" to avoid adding in paragraph (?)
+			-- possible bad design...
 			table.insert(tags, item["#"])
 		elseif item == "\n" then
 			break --paragraph? stop collecting tags for choice
@@ -424,13 +426,18 @@ local function run(container, output, context, from, stack)
 					choice.fallback = true
 				end
 				if valid then
-					choice.tags = find_tags_in_path(choice.path, choice.container)
+					choice.tags = output.tags
+					output.tags = {}
+					local tags = find_tags_in_path(choice.path, choice.container)
+					for _, tag in ipairs(tags) do table.insert(choice.tags, tag) end
 					table.insert(output.choices, choice)
 				end
 				output.text = {}
 
 			elseif item["#"] then --tag
-				table.insert(output.tags, item["#"])
+				if not item["choice"] then
+					table.insert(output.tags, item["#"])
+				end
 
 			elseif item["->"] then --divert
 				if (item["c"] == nil) or (item["c"] and pop(stack)) then --checking condition
@@ -561,7 +568,7 @@ M.create = function(context)
 			local ok, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
-		
+
 	end
 
 	
