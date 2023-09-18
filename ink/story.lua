@@ -159,13 +159,14 @@ M.create = function(s)
 		table.insert(state.input, {flow = flow.name})
 	end
 
-	story.restore = function(history)
+	story.restore = function(history, with_bindings)
 		local observers = context["__observers"]
+		local external = context["__external"]
 		context = {
 			__globals = {}, 
 			__temp = {__root = {}},
 			__lists = context["__lists"],
-			__external = context["__external"],
+			__external = with_bindings and context["__external"] or {},
 			__observers = {},
 			__randoms = Utils.clone(history.randoms),
 			__replay_mode = true
@@ -236,6 +237,7 @@ M.create = function(s)
 		context["__randoms"] = state.randoms
 		context["__replay_mode"] = nil
 		context["__observers"] = observers
+		context["__external"] = external
 		for name, functions in pairs(observers) do
 			for _, f in ipairs(functions) do
 				f(story.variables[name])

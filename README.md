@@ -87,9 +87,9 @@ sys.save(filename, story.get_state())
 
 ```
 
-### story.restore(state)
+### story.restore(state, with_externals)
 Restores story from the saved state. Story should be created with the same - or at least similar :) - json.
-Returns it's last paragraphs and choices.
+Returns it's last paragraphs and choices. Set parameter "with_externals" to true if you want external functions to be called during restoring, e.g. you have some calculations in lua code. 
 ```lua
 local story = ink.create(json_string)
 local paragraphs, choices = story.restore(state)
