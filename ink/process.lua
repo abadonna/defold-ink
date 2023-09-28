@@ -43,7 +43,7 @@ local function get_variable_ref(context, container, name)
 end
 
 local function get_value(variable)
-	if type(variable) == "table" then
+	if type(variable) == "table" and variable.get then
 		return variable.get()
 	end
 
