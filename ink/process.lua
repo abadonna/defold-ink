@@ -343,7 +343,9 @@ local function run(container, output, context, from, stack)
 				table.insert(stack, pop(stack) or pop(stack))
 
 			elseif item == "!" then -- unary not
-				table.insert(stack, not pop(stack))
+				local v1 = pop(stack)
+				local v2 = not v1D
+				table.insert(stack, v2)
 				
 			elseif item == "?" then --containment
 				local v1 = pop(stack)
@@ -516,6 +518,26 @@ local function run(container, output, context, from, stack)
 					end
 				end
 				glue_paragraph(output) -- ??? not sure
+
+			elseif item["x()"] then --function
+				local fname = item["x()"]
+				local fcontainer = find(fname, container)
+				if context["__external"][fname] ~= nil then --external function binded
+					local args = {}
+					for _, param in ipairs(fcontainer.content) do
+						if type(param) == "table" and param["temp="] then
+							table.insert(args, 1, pop(stack))
+						else
+							break
+						end
+					end
+					local res = context["__external"][fname](unpack(args)) or ""
+					table.insert(stack, res)
+				else
+					if FUNCTION_RET ~= run(fcontainer, output, context, container.name, stack) then
+						table.insert(stack, "") --if no return in function we miss void on stack
+					end
+				end
 
 			elseif item["list"] then
 				table.insert(stack, item["list"])
