@@ -398,6 +398,7 @@ local function run(container, output, context, from, stack)
 
 			elseif item["*"] then --choice point
 				local choice = {
+					tags = {},
 					text = "",
 					path = item["*"],
 					container = container
@@ -429,8 +430,7 @@ local function run(container, output, context, from, stack)
 					choice.fallback = true
 				end
 				if valid then
-					local tags = find_tags_in_path(choice.path, choice.container)
-					for _, tag in ipairs(tags) do table.insert(choice.tags, tag) end
+					choice.tags = find_tags_in_path(choice.path, choice.container)
 					table.insert(output.choices, choice)
 				end
 				output.text = {}
