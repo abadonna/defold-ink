@@ -162,10 +162,10 @@ local function find_tags_in_path(path, parent)
 	return tags
 end
 
-local function make_paragraph(output)
+local function make_paragraph(output, force)
 	local p = {text = table.concat(output.text), tags = output.tags}
 	p.text = p.text:gsub("^%s*(.-)%s*$", "%1") --trim
-	if string.len(p.text) > 0 then --skip empty strings
+	if force or string.len(p.text) > 0 then --skip empty strings
 		table.insert(output.paragraphs, p)
 		output.tags = {}
 	end
@@ -402,7 +402,10 @@ local function run(container, output, context, from, stack)
 					path = item["*"],
 					container = container
 				}
-				--todo: apply current tags to previous paragraph?
+				
+				if #output.tags > 0 then --create empty paragraph
+					make_paragraph(output, true)
+				end
 				
 				local flags = item["flg"]
 				local valid = true
@@ -426,8 +429,6 @@ local function run(container, output, context, from, stack)
 					choice.fallback = true
 				end
 				if valid then
-					choice.tags = output.tags
-					output.tags = {}
 					local tags = find_tags_in_path(choice.path, choice.container)
 					for _, tag in ipairs(tags) do table.insert(choice.tags, tag) end
 					table.insert(output.choices, choice)
