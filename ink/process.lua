@@ -180,6 +180,14 @@ local function make_paragraph(output, force)
 	end
 end
 
+
+local function exit_string_eval_mode(context, stack)
+	if context["__string_eval_mode"] and #context["__string_eval_mode"] > 0 then
+		table.insert(stack, table.concat(context["__string_eval_mode"]))
+	end
+	context["__string_eval_mode"] = nil
+end
+
 local END = 1
 local DONE = 2
 local FUNCTION_RET = 3
@@ -199,7 +207,7 @@ local function run(container, output, context, from, stack)
 			elseif item:sub(1, 1) == "^" then --string value
 				context["__glue_mode"] = false
 				if context["__string_eval_mode"] then
-					table.insert(stack, item:sub(2))
+					table.insert(context["__string_eval_mode"], item:sub(2))
 				else
 					table.insert(output.text, item:sub(2))
 				end
@@ -223,10 +231,10 @@ local function run(container, output, context, from, stack)
 			elseif item == "/ev" then 
 				--
 			elseif item == "str" then 
-				context["__string_eval_mode"] = true
+				context["__string_eval_mode"] = {}
 				--
 			elseif item == "/str" then 
-				context["__string_eval_mode"] = false
+				exit_string_eval_mode(context, stack)
 				--
 			elseif item == "pop" then
 				pop(stack)
@@ -263,7 +271,7 @@ local function run(container, output, context, from, stack)
 				end
 
 				if context["__string_eval_mode"] then
-					table.insert(stack, value)
+					table.insert(context["__string_eval_mode"], tostring(value))
 				else
 					table.insert(output.text, value)
 				end
@@ -401,7 +409,7 @@ local function run(container, output, context, from, stack)
 				run(find(item["->"], container), output, context, container.name, stack)
 
 			elseif item == "#" then -- version 21 tags! ink version 1.1
-				context["__string_eval_mode"] = false
+				exit_string_eval_mode(context, stack)
 				output._text = output.text
 				output.text = {}
 			elseif item == "/#" then
@@ -425,12 +433,10 @@ local function run(container, output, context, from, stack)
 			elseif item["*"] then --choice point
 				local choice = {
 					tags = output.tags,
-					text = table.concat(stack),
 					path = item["*"],
 					container = container
 				}
 
-				stack = {}
 				output.tags = {}
 				
 				local flags = item["flg"]
@@ -438,6 +444,8 @@ local function run(container, output, context, from, stack)
 				if Utils.testflag(flags, 0x1) then -- check condition
 					valid = pop(stack)
 				end
+
+				choice.text = pop(stack)
 				
 				if valid and Utils.testflag(flags, 0x10) then --once only
 					valid = find(choice.path, container, true).visits == 0
@@ -568,7 +576,7 @@ M.create = function(context)
 	
 	local co = nil
 	process.run = function(data, output, from, stack) --data is container or choice info
-		context["__string_eval_mode"] = false
+		context["__string_eval_mode"] = nil
 		context["__glue_mode"] = false
 		
 		local container = data.is_container and data or find(data.path, data.container)
