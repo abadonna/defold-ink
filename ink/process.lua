@@ -147,7 +147,7 @@ local function find(path, parent, keep_index)
 	return container
 end
 
-local function find_tags_in_path(path, parent)
+local function find_tags_in_path(path, parent) -- deprecated, ink 1.0 json v.20, inky 0.12.0
 	local tags = {}
 	local container = find(path, parent, true)
 	for i, item in ipairs(container.content) do
@@ -165,11 +165,19 @@ end
 local function make_paragraph(output, force)
 	local p = {text = table.concat(output.text), tags = output.tags}
 	p.text = p.text:gsub("^%s*(.-)%s*$", "%1") --trim
-	if force or string.len(p.text) > 0 then --skip empty strings
-		table.insert(output.paragraphs, p)
-		output.tags = {}
-	end
 	output.text = {}
+	if force or string.len(p.text) > 0 then --skip empty strings
+		output.tags = {}
+		if #output.paragraphs > 0 then --check if previous paragraph is empty so we can combine
+			local prev = output.paragraphs[#output.paragraphs] 
+			if prev.text == "" then
+				prev.text = p.text
+				for _, tag in ipairs(p.tags) do table.insert(prev.tags, tag) end
+				return
+			end
+		end
+		table.insert(output.paragraphs, p)
+	end
 end
 
 local END = 1
@@ -206,6 +214,11 @@ local function run(container, output, context, from, stack)
 				return END
 				
 			elseif item == "ev" then --  start evaluation mode, objects are added to an evaluation stack
+
+				if #output.text == 0 and #output.tags > 0 then --create empty paragraph
+					make_paragraph(output, true)
+				end
+				
 				--
 			elseif item == "/ev" then 
 				--
@@ -248,7 +261,12 @@ local function run(container, output, context, from, stack)
 					end
 					value = table.concat(temp, ", ")
 				end
-				table.insert(output.text, value)
+
+				if context["__string_eval_mode"] then
+					table.insert(stack, value)
+				else
+					table.insert(output.text, value)
+				end
 
 			elseif item == "du" then	--duplicate
 				local obj = pop(stack)
@@ -381,8 +399,16 @@ local function run(container, output, context, from, stack)
 				--no idea if this would work
 				item = container.next()
 				run(find(item["->"], container), output, context, container.name, stack)
+
+			elseif item == "#" then -- version 21 tags! ink version 1.1
+				context["__string_eval_mode"] = false
+				output._text = output.text
+				output.text = {}
+			elseif item == "/#" then
+				table.insert(output.tags, table.concat(output.text))
+				output.text = output._text
 			else
-				error("Unkown command " .. item)
+				error("Unknown command " .. item)
 			end
 
 		elseif type(item) == "number" then
@@ -398,28 +424,19 @@ local function run(container, output, context, from, stack)
 
 			elseif item["*"] then --choice point
 				local choice = {
-					tags = {},
-					text = "",
+					tags = output.tags,
+					text = table.concat(stack),
 					path = item["*"],
 					container = container
 				}
-				
-				if #output.tags > 0 then --create empty paragraph
-					make_paragraph(output, true)
-				end
+
+				stack = {}
+				output.tags = {}
 				
 				local flags = item["flg"]
 				local valid = true
 				if Utils.testflag(flags, 0x1) then -- check condition
 					valid = pop(stack)
-				end
-
-				if Utils.testflag(flags, 0x4) then -- read choice-only content
-					choice.text = pop(stack)
-				end
-				
-				if Utils.testflag(flags, 0x2) then -- read start content
-					choice.text = pop(stack) .. choice.text
 				end
 				
 				if valid and Utils.testflag(flags, 0x10) then --once only
@@ -430,7 +447,9 @@ local function run(container, output, context, from, stack)
 					choice.fallback = true
 				end
 				if valid then
-					choice.tags = find_tags_in_path(choice.path, choice.container)
+					local tags = find_tags_in_path(choice.path, choice.container) -- deprecated?
+					for _, tag in ipairs(tags) do table.insert(choice.tags, tag) end
+					
 					table.insert(output.choices, choice)
 				end
 				output.text = {}
@@ -526,7 +545,7 @@ local function run(container, output, context, from, stack)
 				for key,_ in pairs(item) do
 					err = err .. key .. " "
 				end
-				error("Unkown object " .. err)
+				error("Unknown object " .. err)
 			end
 		end
 
@@ -553,7 +572,7 @@ M.create = function(context)
 		context["__glue_mode"] = false
 		
 		local container = data.is_container and data or find(data.path, data.container)
-
+		
 		--run(container, output, context, from, stack)
 
 		if process.completed then
