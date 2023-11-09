@@ -2,6 +2,10 @@
 
 The [Ink](https://www.inklestudios.com/ink/) language runtime implementation in Lua, an alternative to [Narrator](https://github.com/astrochili/narrator),  based on parsing [ink JSON](https://github.com/inkle/ink/blob/master/Documentation/ink_JSON_runtime_format.md) files. 
 
+## Version
+Works with Inky 0.14.1/ink v.1.1.1
+Please note: json ink format sometimes changes, so check your version.
+
 ## Example
 ```lua
 local ink = require "ink.story"
