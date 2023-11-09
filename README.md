@@ -4,6 +4,7 @@ The [Ink](https://www.inklestudios.com/ink/) language runtime implementation in 
 
 ## Version
 Works with Inky 0.14.1/ink v.1.1.1
+
 Please note: json ink format sometimes changes, so check your version.
 
 ## Example
