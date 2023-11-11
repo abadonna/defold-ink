@@ -164,7 +164,7 @@ end
 
 local function make_paragraph(output, force)
 	local p = {text = table.concat(output.text), tags = output.tags}
-	p.text = p.text:gsub("^%s*(.-)%s*$", "%1") --trim
+	p.text = Utils.trim(p.text)
 	output.text = {}
 	if force or string.len(p.text) > 0 then --skip empty strings
 		output.tags = {}

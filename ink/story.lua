@@ -189,6 +189,11 @@ M.create = function(s)
 
 		local paragraphs, answers = story.continue()
 
+		local compare = function(s1, s2)
+			--TODO fuzzy logic here?
+			return Utils.trim(s1) == Utils.trim(s2)
+		end
+
 		for _, input in ipairs(history.input) do
 			if type(input) == "table" then 
 				if input.flow then
@@ -198,7 +203,7 @@ M.create = function(s)
 				elseif input.name then --manual change of variable
 					context["__globals"][input.name] = input.value
 				else
-					if flow.choices[input.index] and flow.choices[input.index].text == input.text then
+					if flow.choices[input.index] and compare(flow.choices[input.index].text, input.text) then
 						-- all is good!
 						paragraphs, answers = story.continue(input.index)
 					else
@@ -206,7 +211,7 @@ M.create = function(s)
 						--checking text as well (TODO: fuzzy logic?)
 						local is_found = false
 						for i, choice in ipairs(flow.choices) do
-							if choice.text == input.text then
+							if compare(choice.text, input.text) then
 								paragraphs, answers = story.continue(i)
 								is_found = true
 								break
