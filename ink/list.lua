@@ -17,6 +17,7 @@ local function largest(list)
 end
 
 local mt = {
+
 	__add = function(a,b)
 		local res = M.create(a)
 		for key, value in pairs(b) do
@@ -54,8 +55,15 @@ local mt = {
 
 	__le = function(a,b) --  the smallest value in B is at least the smallest value in A, and the largest value in B is at least the largest value in A
 		return (smallest(b) >= smallest(a)) and (largest(b) >= largest(a))
+	end,
+
+	__call = function(list, index)
+		for key, value in pairs(list) do
+			if value == index then
+				return key
+			end
+		end
 	end
-	
 }
 
 M.create = function(data)
