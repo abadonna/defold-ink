@@ -598,8 +598,8 @@ M.create = function(context)
 		
 		local container = data.is_container and data or find(data.path, data.container)
 		
-		run(container, output, context, from, stack)
-		--[[
+		--run(container, output, context, from, stack)
+		
 		if process.completed then
 			co = coroutine.create(function()
 				run(container, output, context, from, stack)
@@ -613,7 +613,7 @@ M.create = function(context)
 			local ok, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
-		--]]
+	
 	end
 
 	
