@@ -198,7 +198,7 @@ M.create = function(s)
 				elseif input.name then --manual change of variable
 					context["__globals"][input.name] = input.value
 				else
-					if flow.choices[input.index].text == input.text then
+					if flow.choices[input.index] and flow.choices[input.index].text == input.text then
 						-- all is good!
 						paragraphs, answers = story.continue(input.index)
 					else
