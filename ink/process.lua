@@ -310,6 +310,23 @@ local function run(container, output, context, from, stack)
 			elseif item == "FLOAT" then
 				table.insert(stack, tonumber(pop(stack)))
 
+			elseif item == "LIST_VALUE" then
+				local value = 0
+				for _, v in pairs(pop(stack)) do
+					value = v
+				end
+				table.insert(stack, value)
+
+			elseif item == "listInt" then
+				local list_name = pop(output.text)
+				local index = pop(stack)
+				for key, value in pairs(context["__lists"][list_name]) do
+					if value == index then
+						table.insert(stack, key)
+						break
+					end
+				end
+
 			elseif item == "+" then
 				local v1 = pop(stack)
 				local v2 = pop(stack)
@@ -581,8 +598,8 @@ M.create = function(context)
 		
 		local container = data.is_container and data or find(data.path, data.container)
 		
-		--run(container, output, context, from, stack)
-
+		run(container, output, context, from, stack)
+		--[[
 		if process.completed then
 			co = coroutine.create(function()
 				run(container, output, context, from, stack)
@@ -596,7 +613,7 @@ M.create = function(context)
 			local ok, check = coroutine.resume(co, container, output)
 			process.completed = check == nil
 		end
-
+		--]]
 	end
 
 	
