@@ -311,8 +311,13 @@ local function run(container, output, context, from, stack)
 				table.insert(stack, tonumber(pop(stack)))
 
 			elseif item == "LIST_VALUE" then
+				local list = pop(stack)
+				if type(list) == "string" then
+					list = get_variable(context, container, list)
+				end
+				
 				local value = 0
-				for _, v in pairs(pop(stack)) do
+				for _, v in pairs(list) do
 					value = v > value and v or value
 				end
 				table.insert(stack, value)
