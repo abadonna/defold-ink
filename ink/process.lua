@@ -326,7 +326,7 @@ local function run(container, output, context, from, stack)
 				local list_name = pop(output.text)
 				local index = pop(stack)
 				local list = context["__lists"][list_name]
-				table.insert(stack, list(index))
+				table.insert(stack, get_variable(context, container, list(index)))
 				
 			elseif item == "+" then
 				local v1 = pop(stack)
