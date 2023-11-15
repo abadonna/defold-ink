@@ -222,16 +222,23 @@ local function run(container, output, context, from, stack)
 				return END
 				
 			elseif item == "ev" then --  start evaluation mode, objects are added to an evaluation stack
-
-				if #output.text == 0 and #output.tags > 0 then --create empty paragraph
-					make_paragraph(output, true)
-				end
-				
 				--
 			elseif item == "/ev" then 
 				--
 			elseif item == "str" then 
 				context["__string_eval_mode"] = {}
+
+				local force_empty = true --maybe it's choice text, put all tags into empty paragraph
+				for _, t in ipairs(output.text) do
+					if string.len(Utils.trim(t)) > 0 then
+						force_empty = false
+						break
+					end
+				end
+
+				if force_empty and #output.tags > 0 then --create empty paragraph
+					make_paragraph(output, true)
+				end
 				--
 			elseif item == "/str" then 
 				exit_string_eval_mode(context, stack)
