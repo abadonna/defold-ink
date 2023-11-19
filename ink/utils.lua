@@ -20,4 +20,9 @@ M.trim = function(s)
 	return s:gsub("^%s*(.-)%s*$", "%1")
 end
 
+M.toboolean = function(value)
+	if value == 0 then return false end
+	return value
+end
+
 return M

@@ -493,7 +493,7 @@ local function run(container, output, context, from, stack)
 				end
 
 			elseif item["->"] then --divert
-				if (item["c"] == nil) or (item["c"] and pop(stack)) then --checking condition
+				if (item["c"] == nil) or (item["c"] and Utils.toboolean(pop(stack))) then --checking condition
 					local path = item["var"] and get_variable(context, container, item["->"]) or item["->"]
 					return run(find(path, container), output, context,  container.name, stack)
 				end
