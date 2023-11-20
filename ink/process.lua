@@ -568,7 +568,6 @@ local function run(container, output, context, from, stack)
 						table.insert(stack, "") --if no return in function we miss void on stack
 					end
 				end
-				glue_paragraph(output) -- ??? not sure
 
 			elseif item["list"] then
 				table.insert(stack, List.create(item["list"]))
