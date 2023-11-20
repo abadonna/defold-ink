@@ -355,7 +355,11 @@ local function run(container, output, context, from, stack)
 				
 			elseif item == "==" then
 				local v1 = pop(stack)
-				local v2 = pop(stack)			
+				local v2 = pop(stack)
+				if type(v1) == "boolean" or type(v2) == "boolean" then
+					v1 = Utils.toboolean(v1)
+					v2 = Utils.toboolean(v2)
+				end
 				table.insert(stack,  v1 == v2)
 				
 			elseif item == ">" then
@@ -381,6 +385,10 @@ local function run(container, output, context, from, stack)
 			elseif item == "!=" then
 				local v1 = pop(stack)
 				local v2 = pop(stack)
+				if type(v1) == "boolean" or type(v2) == "boolean" then
+					v1 = Utils.toboolean(v1)
+					v2 = Utils.toboolean(v2)
+				end
 				table.insert(stack,  v1 ~= v2)
 				
 			elseif item == "<>" then -- glue
@@ -388,13 +396,17 @@ local function run(container, output, context, from, stack)
 				glue_paragraph(output)
 
 			elseif item == "&&" then -- logical and
-				table.insert(stack, pop(stack) and pop(stack))
+				local v1 = Utils.toboolean(pop(stack))
+				local v2 = Utils.toboolean(pop(stack))
+				table.insert(stack, v1 and v2)
 
 			elseif item == "||" then -- logical or
-				table.insert(stack, pop(stack) or pop(stack))
+				local v1 = Utils.toboolean(pop(stack))
+				local v2 = Utils.toboolean(pop(stack))
+				table.insert(stack, v1 or v2)
 
 			elseif item == "!" then -- unary not
-				table.insert(stack, not pop(stack))
+				table.insert(stack, not Utils.toboolean(pop(stack)))
 				
 			elseif item == "?" then --containment
 				local v1 = pop(stack)
