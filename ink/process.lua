@@ -467,7 +467,7 @@ local function run(container, output, context, from, stack)
 				local flags = item["flg"]
 				local valid = true
 				if Utils.testflag(flags, 0x1) then -- check condition
-					valid = pop(stack)
+					valid = Utils.toboolean(pop(stack))
 				end
 
 				choice.text = pop(stack)
