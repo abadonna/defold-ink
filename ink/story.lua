@@ -269,6 +269,24 @@ M.create = function(s)
 
 		return loadstring("return " .. expression)()
 	end
+
+	story.serialize = function()
+		local data = {
+			globals = Utils.clone(context["__globals"]),
+			root = {}
+		}
+		
+		Container.serialize(root, data.root)
+		return data
+	end
+
+	story.deserialize = function(data, path)
+		for key, value in pairs(data.globals) do
+			context["__globals"][key] = value
+		end
+		Container.deserialize(root, data.root)
+		return story.jump(path)
+	end
 	
 	return story
 end

@@ -101,6 +101,10 @@ local paragraphs, choices = story.restore(state)
 
 ```
 
+### story.serialize(), story.deserialize(data, path)
+An alternative way to save and restore the state. More reliably to script changes, but you have to pass "path" to jump, as the story just restores variables. Good option if your game can save only in the predefined moments\places. 
+Not compatible with previous method.
+
 
 
 ## Multiple parallel flows

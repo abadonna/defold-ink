@@ -3,7 +3,7 @@ local Utils = require "ink.utils"
 
 M.create = function(data, parent, name)
 	local container = {
-		name = name or "",
+		name = name or "_",
 		is_container = true,
 		index = 1, 
 		parent = parent, 
@@ -87,9 +87,9 @@ M.create = function(data, parent, name)
 	return container
 end
 
---[[
+
 M.serialize = function(container, output)
-	output[container.name] = {index = container.index, visits = container.visits}
+	output[container.name] = {--[[index = container.index,--]] visits = container.visits}
 	for _, child in pairs(container.attributes) do
 		if type(child) == "table" and child.is_container then
 			M.serialize(child, output)
@@ -100,7 +100,21 @@ M.serialize = function(container, output)
 			M.serialize(child, output)
 		end
 	end
-end --]]
+end
 
+M.deserialize = function(container, data)
+	container.visits = data[container.name] and data[container.name].visits or container.visits
+	
+	for _, child in pairs(container.attributes) do
+		if type(child) == "table" and child.is_container then
+			M.deserialize(child, data)
+		end
+	end
+	for _, child in ipairs(container.content) do
+		if type(child) == "table" and child.is_container then
+			M.deserialize(child, data)
+		end
+	end
+end
 
 return M
