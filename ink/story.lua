@@ -285,6 +285,13 @@ M.create = function(s)
 			context["__globals"][key] = value
 		end
 		Container.deserialize(root, data.root)
+		flow = {
+			name = "__default",
+			choices = {},
+			process = Process.create(context)
+		}
+
+		flows = {__default = flow}
 		return story.jump(path)
 	end
 	

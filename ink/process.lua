@@ -129,14 +129,30 @@ local function find(path, parent, keep_index)
 			if container.attributes[part] then
 				container = container.attributes[part]
 			else
-				for i, item in ipairs(container.content) do
-					if type(item) == "table" and item.is_container and item.attributes["#n"] == part then
-						if not keep_index then
-							container.index = i + 1
+				local search_container
+				search_container = function(c)
+					for i, item in ipairs(c.content) do
+						if type(item) == "table" and item.is_container then
+							if item.attributes["#n"] == part then
+								if not keep_index then
+									c.index = i + 1
+								end
+								container = item
+								return true
+							end
+							if search_container(item) then
+								if not keep_index then
+									c.index = i + 1
+								end
+								return true
+							end
 						end
-						container = item
 					end
+					return false
 				end
+
+				search_container(container)
+				
 			end
 		end
 	end	
