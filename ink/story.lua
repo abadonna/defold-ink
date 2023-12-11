@@ -280,9 +280,16 @@ M.create = function(s)
 		return data
 	end
 
-	story.deserialize = function(data, path)
+	story.deserialize = function(data, path, reset_observers)
+		if reset_observers then
+			context["__observers"] = {}
+		end
 		for key, value in pairs(data.globals) do
-			context["__globals"][key] = value
+			if context["__observers"][key] then
+				story.assign_value(key, value)
+			else
+				context["__globals"][key] = value
+			end
 		end
 		Container.deserialize(root, data.root)
 		flow = {
