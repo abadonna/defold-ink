@@ -124,7 +124,7 @@ M.create = function(s)
 	end
 
 	story.assign_value = function(name, value)
-		context["__globals"][name] = value
+		context["__globals"][name] = value --possible issue with lists, see deserialize
 		if context["__observers"][name] then -- execute observers
 			for _, f in ipairs(context["__observers"][name]) do
 				f(context["__globals"][name])
@@ -285,6 +285,9 @@ M.create = function(s)
 			context["__observers"] = {}
 		end
 		for key, value in pairs(data.globals) do
+			if type(value) == "table" then
+				value = List.create(value)
+			end
 			if context["__observers"][key] then
 				story.assign_value(key, value)
 			else
