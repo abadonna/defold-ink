@@ -94,6 +94,14 @@ local function pop(stack)
 	return item
 end
 
+local function popx(stack)
+	local item = pop(stack)
+	if type(item) == "boolean" then
+		item = item and 1 or 0
+	end
+	return item
+end
+
 local function glue_paragraph(output)
 	if #output.text == 0 and #output.paragraphs > 0 then
 		local p = pop(output.paragraphs)
@@ -363,21 +371,21 @@ local function run(container, output, context, from, stack)
 				table.insert(stack, get_variable(context, container, list(index)))
 				
 			elseif item == "+" then
-				local v1 = pop(stack)
-				local v2 = pop(stack)
+				local v1 = popx(stack)
+				local v2 = popx(stack)
 				table.insert(stack, v1 + v2)
 				
 			elseif item == "-" then
-				local v1 = pop(stack)
-				local v2 = pop(stack)
+				local v1 = popx(stack)
+				local v2 = popx(stack)
 				table.insert(stack, v2 - v1)
 				
 			elseif item == "*" then
-				local value = pop(stack) * pop(stack)
+				local value = popx(stack) * popx(stack)
 				table.insert(stack, value)
 				
 			elseif item == "/" then
-				local value = 1 / pop(stack) * pop(stack)
+				local value = 1 / popx(stack) * popx(stack)
 				table.insert(stack, value)
 				
 			elseif item == "==" then
@@ -390,23 +398,23 @@ local function run(container, output, context, from, stack)
 				table.insert(stack,  v1 == v2)
 				
 			elseif item == ">" then
-				local v1 = pop(stack)
-				local v2 = pop(stack)
+				local v1 = popx(stack)
+				local v2 = popx(stack)
 				table.insert(stack, v1 < v2)
 				
 			elseif item == ">=" then
-				local v1 = pop(stack)
-				local v2 = pop(stack)
+				local v1 = popx(stack)
+				local v2 = popx(stack)
 				table.insert(stack, v1 <= v2)
 				
 			elseif item == "<" then
-				local v2 = pop(stack)
-				local v1 = pop(stack)
+				local v2 = popx(stack)
+				local v1 = popx(stack)
 				table.insert(stack,  v1 < v2)
 				
 			elseif item == "<=" then
-				local v2 = pop(stack)
-				local v1 = pop(stack)
+				local v2 = popx(stack)
+				local v1 = popx(stack)
 				table.insert(stack, v1 <= v2)
 				
 			elseif item == "!=" then
