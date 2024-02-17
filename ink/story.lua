@@ -24,7 +24,7 @@ M.create = function(s)
 	
 	local data
 	local status, err = pcall(function()
-		data = json.decode(s)
+		data = json.decode(s, {decode_null_as_userdata = true})
 	end) 
 
 	if not status then
