@@ -516,8 +516,6 @@ local function run(container, output, context, from, stack)
 				if Utils.testflag(flags, 0x1) then -- check condition
 					valid = Utils.toboolean(pop(stack))
 				end
-
-				choice.text = pop(stack)
 				
 				if valid and Utils.testflag(flags, 0x10) then --once only
 					valid = find(choice.path, container, true).visits == 0
@@ -526,10 +524,12 @@ local function run(container, output, context, from, stack)
 					valid = #output.choices == 0
 					choice.fallback = true
 				end
+
+				choice.text = choice.fallback and "" or pop(stack)
+				
 				if valid then
 					local tags = find_tags_in_path(choice.path, choice.container) -- deprecated?
 					for _, tag in ipairs(tags) do table.insert(choice.tags, tag) end
-					
 					table.insert(output.choices, choice)
 				end
 				output.text = {}
