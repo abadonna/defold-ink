@@ -589,11 +589,15 @@ local function run(container, output, context, from, stack)
 			elseif item["->t->"] then --tunnel
 				local process = M.create(context)
 				local tunnel = find(item["->t->"], container)
-				process.run(tunnel, output, container.name)
+				process.run(tunnel, output, container.name, stack)
 	
 				while #output.choices > 0 do
 					tunnel, output = coroutine.yield(true)
-					process.run(tunnel, output)
+					process.run(tunnel, output, container.name, stack)
+				end
+				local path = pop(stack)
+				if path ~= "" then
+					return run(find(path, container), output, context,  container.name, stack)
 				end
 
 			elseif item["f()"] then --function
