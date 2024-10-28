@@ -224,7 +224,7 @@ M.create = function(s)
 								error_idx = idx
 								break 
 							end
-							pprint(paragraphs, answers)
+							--pprint(paragraphs, answers)
 							pprint("'".. input.text .. "' choice is not found.")
 							error("Can't restore story, incompatible data?")
 						end
