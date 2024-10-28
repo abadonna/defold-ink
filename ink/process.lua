@@ -31,7 +31,7 @@ local function get_variable_ref(context, container, name)
 			set = function(v) context["__temp"][container.stitch][name] = v end
 		}
 	end
-	
+
 	if context["__temp"]["__root"][name] ~= nil then
 		return {
 			get = function() return context["__temp"]["__root"][name] end,
@@ -159,7 +159,7 @@ local function find(path, parent, keep_index)
 						end
 					end
 				end
-			
+
 				for _, item in pairs(c.attributes) do
 					if type(item) == "table" and item.is_container then
 						if search_container(item) then
@@ -167,12 +167,12 @@ local function find(path, parent, keep_index)
 						end
 					end
 				end
-				
+
 				return false
 			end
 
 			search_container(container)
-				
+
 		end
 	end	
 
@@ -249,13 +249,13 @@ local function run(container, output, context, from, stack)
 
 			elseif item == "done" then
 				return DONE
-				
+
 			elseif item == "end" then
 				if  #output.text > 0 then
 					make_paragraph(output)
 				end
 				return END
-				
+
 			elseif item == "ev" then --  start evaluation mode, objects are added to an evaluation stack
 				--
 			elseif item == "/ev" then 
@@ -285,6 +285,7 @@ local function run(container, output, context, from, stack)
 				local value = math.random(0, pop(stack)-1)
 				if context["__replay_mode"] then
 					value = pop(context["__randoms"])
+					table.insert(context["__randoms__"], 1, value)
 				else
 					table.insert(context["__randoms"], 1, value)
 				end
@@ -296,11 +297,12 @@ local function run(container, output, context, from, stack)
 				local value = math.random(v1, v2)
 				if context["__replay_mode"] then
 					value = pop(context["__randoms"])
+					table.insert(context["__randoms__"], 1, value)
 				else
 					table.insert(context["__randoms"], 1, value)
 				end
 				table.insert(stack, value)
-				
+
 			elseif item == "out" then
 				local value = pop(stack)
 				if type(value) == "table" then --list?
@@ -332,7 +334,7 @@ local function run(container, output, context, from, stack)
 				local v2 = pop(stack)
 				local v1 = pop(stack)
 				table.insert(stack, math.fmod(v1, v2))
-				
+
 			elseif item == "visit" then
 				table.insert(stack, container.visits - 1)
 
@@ -357,7 +359,7 @@ local function run(container, output, context, from, stack)
 				if type(list) == "string" then
 					list = get_variable(context, container, list)
 				end
-				
+
 				local value = 0
 				for _, v in pairs(list) do
 					value = v > value and v or value
@@ -369,25 +371,25 @@ local function run(container, output, context, from, stack)
 				local index = pop(stack)
 				local list = context["__lists"][list_name]
 				table.insert(stack, get_variable(context, container, list(index)))
-				
+
 			elseif item == "+" then
 				local v1 = popx(stack)
 				local v2 = popx(stack)
 				table.insert(stack, v1 + v2)
-				
+
 			elseif item == "-" then
 				local v1 = popx(stack)
 				local v2 = popx(stack)
 				table.insert(stack, v2 - v1)
-				
+
 			elseif item == "*" then
 				local value = popx(stack) * popx(stack)
 				table.insert(stack, value)
-				
+
 			elseif item == "/" then
 				local value = 1 / popx(stack) * popx(stack)
 				table.insert(stack, value)
-				
+
 			elseif item == "==" then
 				local v1 = pop(stack)
 				local v2 = pop(stack)
@@ -396,27 +398,27 @@ local function run(container, output, context, from, stack)
 					v2 = Utils.toboolean(v2)
 				end
 				table.insert(stack,  v1 == v2)
-				
+
 			elseif item == ">" then
 				local v1 = popx(stack)
 				local v2 = popx(stack)
 				table.insert(stack, v1 < v2)
-				
+
 			elseif item == ">=" then
 				local v1 = popx(stack)
 				local v2 = popx(stack)
 				table.insert(stack, v1 <= v2)
-				
+
 			elseif item == "<" then
 				local v2 = popx(stack)
 				local v1 = popx(stack)
 				table.insert(stack,  v1 < v2)
-				
+
 			elseif item == "<=" then
 				local v2 = popx(stack)
 				local v1 = popx(stack)
 				table.insert(stack, v1 <= v2)
-				
+
 			elseif item == "!=" then
 				local v1 = pop(stack)
 				local v2 = pop(stack)
@@ -425,7 +427,7 @@ local function run(container, output, context, from, stack)
 					v2 = Utils.toboolean(v2)
 				end
 				table.insert(stack,  v1 ~= v2)
-				
+
 			elseif item == "<>" then -- glue
 				context["__glue_mode"] = true
 				glue_paragraph(output)
@@ -442,7 +444,7 @@ local function run(container, output, context, from, stack)
 
 			elseif item == "!" then -- unary not
 				table.insert(stack, not Utils.toboolean(pop(stack)))
-				
+
 			elseif item == "?" then --containment
 				local v1 = pop(stack)
 				local v2 = pop(stack)
@@ -454,7 +456,7 @@ local function run(container, output, context, from, stack)
 					end
 				end
 				table.insert(stack, result)
-				
+
 			elseif item == "!?" then -- 
 				local v1 = pop(stack)
 				local v2 = pop(stack)
@@ -466,7 +468,7 @@ local function run(container, output, context, from, stack)
 					end
 				end
 				table.insert(stack, result)
-				
+
 			elseif item == "nop" then
 				--No-operation
 			elseif item == "void" then
@@ -510,13 +512,13 @@ local function run(container, output, context, from, stack)
 				}
 
 				output.tags = {}
-				
+
 				local flags = item["flg"]
 				local valid = true
 				if Utils.testflag(flags, 0x1) then -- check condition
 					valid = Utils.toboolean(pop(stack))
 				end
-				
+
 				if valid and Utils.testflag(flags, 0x10) then --once only
 					valid = find(choice.path, container, true).visits == 0
 				end
@@ -526,7 +528,7 @@ local function run(container, output, context, from, stack)
 				end
 
 				choice.text = choice.fallback and "" or pop(stack)
-				
+
 				if valid then
 					local tags = find_tags_in_path(choice.path, choice.container) -- deprecated?
 					for _, tag in ipairs(tags) do table.insert(choice.tags, tag) end
@@ -585,12 +587,12 @@ local function run(container, output, context, from, stack)
 				local target = find(item["CNT?"], container, true)
 				--pprint(item["CNT?"], target.visits)
 				table.insert(stack, target.visits)
-				
+
 			elseif item["->t->"] then --tunnel
 				local process = M.create(context)
 				local tunnel = find(item["->t->"], container)
 				process.run(tunnel, output, container.name, stack)
-	
+
 				while #output.choices > 0 do
 					tunnel, output = coroutine.yield(true)
 					process.run(tunnel, output, container.name, stack)
@@ -638,7 +640,7 @@ local function run(container, output, context, from, stack)
 			else
 				return DONE
 			end
-			
+
 		end
 	end
 end
@@ -648,14 +650,14 @@ M.create = function(context)
 	local process = {
 		completed = true
 	}
-	
+
 	local co = nil
 	process.run = function(data, output, from, stack) --data is container or choice info
 		context["__string_eval_mode"] = nil
 		context["__glue_mode"] = false
-		
+
 		local container = data.is_container and data or find(data.path, data.container)
-		
+
 		--run(container, output, context, from, stack)
 
 		if process.completed then
@@ -674,7 +676,7 @@ M.create = function(context)
 
 	end
 
-	
+
 	return process
 end
 

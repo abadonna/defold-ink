@@ -159,7 +159,8 @@ M.create = function(s)
 		table.insert(state.input, {flow = flow.name})
 	end
 
-	story.restore = function(history, with_bindings)
+	story.restore = function(history, with_bindings, ignore_errors)
+		local error_idx = 0
 		local observers = context["__observers"]
 		local external = context["__external"]
 		context = {
@@ -169,6 +170,7 @@ M.create = function(s)
 			__external = with_bindings and context["__external"] or {},
 			__observers = {},
 			__randoms = Utils.clone(history.randoms),
+			__randoms__ = {},
 			__replay_mode = true
 		}
 		story.variables = context["__globals"]
@@ -194,7 +196,7 @@ M.create = function(s)
 			return Utils.trim(s1) == Utils.trim(s2)
 		end
 
-		for _, input in ipairs(history.input) do
+		for idx, input in ipairs(history.input) do
 			if type(input) == "table" then 
 				if input.flow then
 					story.switch_flow(input.flow)
@@ -218,6 +220,11 @@ M.create = function(s)
 							end
 						end
 						if not is_found then
+							if ignore_errors then 
+								error_idx = idx
+								break 
+							end
+							pprint(paragraphs, answers)
 							pprint("'".. input.text .. "' choice is not found.")
 							error("Can't restore story, incompatible data?")
 						end
@@ -234,10 +241,19 @@ M.create = function(s)
 			end
 		end
 
-		state = {
-			input = Utils.clone(history.input),
-			randoms = Utils.clone(history.randoms)
-		}
+		if error_idx > 0 then
+			state = {input = {}, randoms = context["__randoms__"]}
+
+			for i = 1, error_idx - 1 do
+				table.insert(state.input, history.input[i])
+			end
+
+		else
+			state = {
+				input = Utils.clone(history.input),
+				randoms = Utils.clone(history.randoms)
+			}
+		end
 
 		context["__randoms"] = state.randoms
 		context["__replay_mode"] = nil
