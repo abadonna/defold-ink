@@ -66,6 +66,10 @@ M.create = function(s)
 
 		local answers = {}
 		local paragraphs = output.paragraphs
+
+		if #output.tags > 0 then
+			table.insert(paragraphs, {tags = output.tags, text = ""})
+		end
 	
 		if #flow.choices == 1 and flow.choices[1].fallback then
 			paragraphs, answers = story.continue(1)
