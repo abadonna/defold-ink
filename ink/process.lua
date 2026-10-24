@@ -223,6 +223,42 @@ local function exit_string_eval_mode(context, stack)
 	context["__string_eval_mode"] = nil
 end
 
+-- Keep random draws in the existing replay history. Replaying must not draw
+-- new random values, otherwise it changes the application's random stream.
+local function random_value(context, minimum, maximum)
+	local value
+	if context["__replay_mode"] then
+		value = pop(context["__randoms"])
+		table.insert(context["__randoms__"], 1, value)
+	else
+		value = math.random(minimum, maximum)
+		table.insert(context["__randoms"], 1, value)
+	end
+	return value
+end
+
+local function sequence_shuffle_index(context, container, count, elements)
+	assert(elements > 0 and elements == math.floor(elements), "Invalid shuffle element count")
+	assert(count >= 0 and count == math.floor(count), "Invalid shuffle visit index")
+	local cycle = math.floor(count / elements)
+	local iteration = count % elements
+	context["__shuffles"] = context["__shuffles"] or {}
+	local shuffle = context["__shuffles"][container.name]
+	if not shuffle or shuffle.cycle ~= cycle or #shuffle.indices ~= elements then
+		local remaining = {}
+		for i = 0, elements - 1 do
+			table.insert(remaining, i)
+		end
+		shuffle = {cycle = cycle, indices = {}}
+		for i = 1, elements do
+			local selected = random_value(context, 1, #remaining)
+			shuffle.indices[i] = table.remove(remaining, selected)
+		end
+		context["__shuffles"][container.name] = shuffle
+	end
+	return shuffle.indices[iteration + 1]
+end
+
 local END = 1
 local DONE = 2
 local FUNCTION_RET = 3
@@ -282,26 +318,14 @@ local function run(container, output, context, from, stack)
 				pop(stack)
 
 			elseif item == "seq" then
-				local value = math.random(0, pop(stack)-1)
-				if context["__replay_mode"] then
-					value = pop(context["__randoms"])
-					table.insert(context["__randoms__"], 1, value)
-				else
-					table.insert(context["__randoms"], 1, value)
-				end
-				table.insert(stack, value)
+				local elements = pop(stack)
+				local count = pop(stack)
+				table.insert(stack, sequence_shuffle_index(context, container, count, elements))
 
 			elseif item == "rnd" then
-				local v2 = pop(stack)
-				local v1 = pop(stack)
-				local value = math.random(v1, v2)
-				if context["__replay_mode"] then
-					value = pop(context["__randoms"])
-					table.insert(context["__randoms__"], 1, value)
-				else
-					table.insert(context["__randoms"], 1, value)
-				end
-				table.insert(stack, value)
+				local maximum = pop(stack)
+				local minimum = pop(stack)
+				table.insert(stack, random_value(context, minimum, maximum))
 
 			elseif item == "out" then
 				local value = pop(stack)

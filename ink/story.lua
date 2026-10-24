@@ -205,7 +205,7 @@ M.create = function(s)
 				if input.flow then
 					story.switch_flow(input.flow)
 				elseif input.jump then
-					story.jump(input.jump)
+					paragraphs, answers = story.jump(input.jump)
 				elseif input.name then --manual change of variable
 					context["__globals"][input.name] = input.value
 				else
@@ -293,6 +293,7 @@ M.create = function(s)
 	story.serialize = function()
 		local data = {
 			globals = Utils.clone(context["__globals"]),
+			shuffles = Utils.clone(context["__shuffles"] or {}),
 			root = {}
 		}
 		
@@ -314,6 +315,7 @@ M.create = function(s)
 				context["__globals"][key] = value
 			end
 		end
+		context["__shuffles"] = Utils.clone(data.shuffles or {})
 		Container.deserialize(root, data.root)
 		flow = {
 			name = "__default",

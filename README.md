@@ -117,3 +117,6 @@ Creates a new flow or switches to an existing one. If name is nil - it will goes
 You can jump to a particular named knot or stitch.
 
 ---
+## Compatibility and regression tests
+
+See [COMPATIBILITY.md](COMPATIBILITY.md) for the Ink feature audit, shuffle fixes, known limitations, and test instructions.
